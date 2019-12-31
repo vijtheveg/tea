@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Text;
 using System.Xml;
 
@@ -55,6 +56,9 @@ namespace Com.MeraBills.StringResourceReaderWriter
 
         public void Write(XmlWriter writer)
         {
+            if (this.Source != null)
+                writer.WriteComment(DoNotModify + this.Source.ToString());
+
             string startElementName;
             if (this.ResourceType == ResourceType.String)
                 startElementName = StringElementName;
@@ -77,6 +81,85 @@ namespace Com.MeraBills.StringResourceReaderWriter
             writer.WriteEndElement();
         }
 
+        public override string ToString()
+        {
+            var writerSettings = new XmlWriterSettings
+            {
+                Async = false,
+                Indent = false,
+                NewLineChars = "",
+                OmitXmlDeclaration = true
+            };
+
+            var result = new StringBuilder();
+            using var writer = XmlWriter.Create(result, writerSettings);
+            this.Write(writer);
+            return result.ToString();
+        }
+
+        public static StringResource FromString(string serialized)
+        {
+            if (string.IsNullOrEmpty(serialized))
+                throw new ArgumentNullException(nameof(serialized));
+
+            using var stringReader = new StringReader(serialized);
+            var readerSettings = new XmlReaderSettings
+            {
+                Async = false,
+                IgnoreComments = true
+            };
+            using var reader = XmlReader.Create(stringReader, readerSettings);
+            if (!reader.Read())
+                throw new ArgumentException("Reader ended unexpectedly");
+
+            var resourceType = GetResourceType(reader.Name);
+            return new StringResource(resourceType, reader);
+        }
+
+        public void SetContent(ResourceContent newContent)
+        {
+            bool updateRequired = false;
+            if (this.Content == null)
+            {
+                if (newContent != null)
+                    updateRequired = true;
+                // else: nothing has changed
+            }
+            else
+            {
+                if (!this.Content.Equals(newContent))
+                    updateRequired = true;
+                // else: nothing has changed
+            }
+
+            if (updateRequired)
+            {
+                this.Content = newContent;
+
+                // Reset source whenever content changes
+                // The presence of source indicates that the content was finalized by a human
+                this.Source = null;
+            }
+        }
+
+        public void TrySetContentFromComment(string comment)
+        {
+            if (string.IsNullOrEmpty(comment))
+                return;
+
+            if (!comment.StartsWith(DoNotModify, StringComparison.Ordinal))
+                return;
+
+            try
+            {
+                this.Source = StringResource.FromString(comment.Substring(DoNotModify.Length));
+            }
+            catch
+            {
+                // Ignore any errors during deserialization from comment - just don't set the source in this case
+            }
+        }
+
         public override bool Equals(object obj)
         {
             return Equals(obj as StringResource);
@@ -95,20 +178,6 @@ namespace Com.MeraBills.StringResourceReaderWriter
             return HashCode.Combine(ResourceType, Name, Content);
         }
 
-        public override string ToString()
-        {
-            var writerSettings = new XmlWriterSettings();
-            writerSettings.Async = false;
-            writerSettings.Indent = false;
-            writerSettings.NewLineChars = "";
-            writerSettings.OmitXmlDeclaration = true;
-
-            var result = new StringBuilder();
-            using var writer = XmlWriter.Create(result, writerSettings);
-            this.Write(writer);
-            return result.ToString();
-        }
-
         public readonly ResourceType ResourceType;
 
         public readonly string Name;
@@ -117,7 +186,9 @@ namespace Com.MeraBills.StringResourceReaderWriter
 
         public readonly bool IsTranslatable;
 
-        public ResourceContent Content { get; set; }
+        public ResourceContent Content { get; private set; }
+
+        public StringResource Source { get; set; }
 
         public String FileName { get; set; }
 
@@ -131,6 +202,7 @@ namespace Com.MeraBills.StringResourceReaderWriter
         public const string FormattedAttributeName = "formatted";
         public const string TrueValue = "true";
         public const string FalseValue = "false";
+        public const string DoNotModify = "--DO NOT MODIFY--";
 
         public const bool IsTranslatableDefault = true;
         public const bool HasFormatSpecifiersDefault = true;
