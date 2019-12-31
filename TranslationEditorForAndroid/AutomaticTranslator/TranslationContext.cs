@@ -37,6 +37,8 @@ namespace Com.MeraBills.AutomaticTranslator
             if (string.IsNullOrWhiteSpace(sourceString))
                 return result;
 
+            // TODO: Check if the entire string refers to another string - if so, don't translate this string - do this in a dfifferent function
+
             string prepared;
             lock (_lockObject)
             {
@@ -69,6 +71,8 @@ namespace Com.MeraBills.AutomaticTranslator
                 // Replace Android string special characters and HTML formatting tags (<b></b>, <i></i> and <u></u>)
                 foreach(KeyValuePair<string, string> pair in _map)
                     prepared = prepared.Replace(pair.Key, pair.Value, true, CultureInfo.InvariantCulture);
+
+                // TODO: Replace format specifiers, if formatted is true
 
                 // XML decode the string
                 _xElement.SetValue(prepared);
