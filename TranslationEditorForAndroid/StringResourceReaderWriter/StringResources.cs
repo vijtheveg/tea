@@ -75,8 +75,11 @@ namespace Com.MeraBills.StringResourceReaderWriter
                     commentLines.Clear();
                 }
 
-                ++count;
+                if (this.Strings.ContainsKey(stringResource.Name))
+                    throw new DuplicateStringResourceException(stringResource.Name);
+
                 this.Strings.Add(stringResource.Name, stringResource);
+                ++count;
             }
 
             reader.ReadEndElement();

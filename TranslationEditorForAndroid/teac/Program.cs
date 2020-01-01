@@ -109,19 +109,14 @@ namespace teac
                 try
                 {
                     using var reader = XmlReader.Create(new StreamReader(xmlFile.FullName), readerSettings);
-
-                    int before = stringResources.Strings.Count;
                     uint stringCount = stringResources.Read(xmlFile.Name, reader);
-                    int after = stringResources.Strings.Count;
-
-                    if ((after - before) != stringCount)
-                    {
-                        Console.WriteLine("CRITICAL ERROR - this file has strings that are also in previously parsed files! Aborting ...\n");
-                        return null;
-                    }
-
                     totalStrings += stringCount;
                     Console.WriteLine("Success - {0:d} string resources parsed", stringCount);
+                }
+                catch(DuplicateStringResourceException dsre)
+                {
+                    Console.WriteLine("CRITICAL ERROR - this file has a string (name=\"{0:s}\") that is also in a previously parsed file! Aborting ...\n", dsre.StringResourceName);
+                    return null;
                 }
                 catch
                 {
