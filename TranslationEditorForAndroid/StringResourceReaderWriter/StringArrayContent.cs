@@ -9,30 +9,36 @@ namespace Com.MeraBills.StringResourceReaderWriter
     {
         public StringArrayContent(XmlReader reader) : base(reader)
         {
-            if (reader.NodeType == XmlNodeType.EndElement)
-                return;
+            this.Values = new List<string>();
 
-            while(reader.Read())
+            if (reader.IsEmptyElement)
             {
-                if (reader.NodeType == XmlNodeType.EndElement)
-                    break;
+                // Read past the empty element
+                reader.Skip();
+                return;
+            }
 
+            // Read past the start element
+            if (!reader.Read())
+                throw new ArgumentException("Reader ended unexpectedly");
+
+            while (reader.NodeType != XmlNodeType.EndElement)
+            {
                 if (reader.NodeType != XmlNodeType.Element)
+                {
+                    reader.Skip();
                     continue;   // Ignore everything but elements
+                }
 
                 if (string.CompareOrdinal(reader.LocalName, ItemElementName) != 0)
                     throw new ArgumentException("<item> expected");
 
-                if (!reader.Read())
-                    throw new ArgumentException("Reader ended unexpectedly");
-
                 string value = StringContent.ReadStringValue(reader);
-                if (this.Values == null)
-                    this.Values = new List<string>();
                 this.Values.Add(value);
-
-                reader.ReadEndElement();
             }
+
+            // Read past the end element
+            reader.ReadEndElement();
         }
 
         public override void Write(XmlWriter writer)

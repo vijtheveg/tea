@@ -1,8 +1,10 @@
-﻿using System;
+﻿using Com.MeraBills.StringResourceReaderWriter;
+using System;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Xml;
 
 namespace teac
 {
@@ -34,7 +36,7 @@ namespace teac
             {
                 var importCommand = new Command("excel-import");
                 importCommand.AddAlias("ei");
-                importCommand.Description = "Import target language translations of source langauge strings from an Excel file";
+                importCommand.Description = "Import target language translations of source language strings from an Excel file";
                 importCommand.TreatUnmatchedTokensAsErrors = true;
 
                 var fileArgument = new Argument<FileInfo>("input-file");
@@ -56,32 +58,80 @@ namespace teac
         {
             Console.WriteLine();
 
-            outputFile = outputFile ?? new FileInfo(string.Format(OutputFileNameTemplate, sourceLanguage, targetLanguage));
+            outputFile ??= new FileInfo(string.Format(OutputFileNameTemplate, sourceLanguage, targetLanguage));
             Console.WriteLine("Source language code: {0:s}", sourceLanguage);
             Console.WriteLine("Target language code: {0:s}", targetLanguage);
             Console.WriteLine("Output file: {0:s}", outputFile.FullName);
 
-            var stringResourceDirectories = FindStringResourceDirectories(sourceLanguage, targetLanguage);
-            DirectoryInfo sourceLanguageDirectory = stringResourceDirectories.Item1;
-            DirectoryInfo targetLanguageDirectory = stringResourceDirectories.Item2;
-            bool error = false;
-            if (sourceLanguageDirectory == null)
-            {
-                Console.WriteLine("\nERROR: values directory for language {0:s} not found", sourceLanguage);
-                error = true;
-            }
-            if (targetLanguageDirectory == null)
-            {
-                Console.WriteLine("\nERROR: values directory for language {0:s} not found", targetLanguage);
-                error = true;
-            }
-            if (error)
+            DirectoryInfo sourceLanguageDirectory;
+            DirectoryInfo targetLanguageDirectory;
+            if (!FindStringResourceDirectories(sourceLanguage, targetLanguage, out sourceLanguageDirectory, out targetLanguageDirectory))
                 return;
+
+            DirectoryInfo outputFileDirectory = outputFile.Directory;
+            if (!outputFileDirectory.Exists)
+            {
+                Console.WriteLine("\nERROR: Output directory {0:s} does not exist", outputFileDirectory.FullName);
+                return;
+            }
+
+            StringResources sourceStrings = ParseDirectory(sourceLanguage, true, sourceLanguageDirectory);
+            if (sourceStrings == null)
+                return; // Something went wrong
+
+            StringResources targetStrings = ParseDirectory(targetLanguage, false, targetLanguageDirectory);
+            if (targetStrings == null)
+                return; // Something went wrong
         }
 
         private static void ExcelImport(string sourceLanguage, string targetLanguage, FileInfo inputFile)
         {
             throw new NotImplementedException();
+        }
+
+        private static StringResources ParseDirectory(string language, bool isSourceLanguage, DirectoryInfo languageDirectory)
+        {
+            StringResources stringResources = new StringResources(language, isSourceLanguage: true);
+            var readerSettings = new XmlReaderSettings()
+            {
+                Async = false,
+                CloseInput = true,
+                IgnoreWhitespace = true
+            };
+            uint totalFiles = 0;
+            uint errors = 0;
+            uint totalStrings = 0;
+            Console.WriteLine("\nParsing XML files in {0:s} language directory ...", isSourceLanguage ? "source" : "target");
+            foreach (var xmlFile in languageDirectory.GetFiles("*.xml"))
+            {
+                ++totalFiles;
+                Console.Write("  {0:s} ... ", xmlFile.Name);
+                try
+                {
+                    using var reader = XmlReader.Create(new StreamReader(xmlFile.FullName), readerSettings);
+
+                    int before = stringResources.Strings.Count;
+                    uint stringCount = stringResources.Read(xmlFile.Name, reader);
+                    int after = stringResources.Strings.Count;
+
+                    if ((after - before) != stringCount)
+                    {
+                        Console.WriteLine("CRITICAL ERROR - this file has strings that are also in previously parsed files! Aborting ...\n");
+                        return null;
+                    }
+
+                    totalStrings += stringCount;
+                    Console.WriteLine("Success - {0:d} string resources parsed", stringCount);
+                }
+                catch
+                {
+                    Console.WriteLine("ERROR - are you sure this is a resources file?");
+                    ++errors;
+                }
+            }
+            Console.WriteLine("Parsed {0:d} resource files with {1:d} string resources. {2:d} files had errors.\n", totalFiles, totalStrings, errors);
+
+            return stringResources;
         }
 
         private static Argument<string> CreateLanguageCodeArgument(string name)
@@ -100,10 +150,10 @@ namespace teac
             return languageCodeArgument;
         }
 
-        private static (DirectoryInfo, DirectoryInfo) FindStringResourceDirectories(string sourceLanguage, string targetLanguage)
+        private static bool FindStringResourceDirectories(string sourceLanguage, string targetLanguage, out DirectoryInfo sourceLanguageDirectory, out DirectoryInfo targetLanguageDirectory)
         {
-            DirectoryInfo sourceLanguageDirectory = null;
-            DirectoryInfo targetLanguageDirectory = null;
+            sourceLanguageDirectory = null;
+            targetLanguageDirectory = null;
 
             var valuesSubdirectories = Directory.GetDirectories(Directory.GetCurrentDirectory(), "values*", SearchOption.TopDirectoryOnly);
             foreach(var valuesSubdirectory in valuesSubdirectories)
@@ -113,7 +163,7 @@ namespace teac
                 if (match.Success)
                 {
                     // Get the language of the current values directory
-                    string language = match.Groups[0].Value;
+                    string language = match.Groups[1].Value;
                     if (string.Compare(sourceLanguage, language, StringComparison.OrdinalIgnoreCase) == 0)
                         sourceLanguageDirectory = current;
                     else if (string.Compare(targetLanguage, language, StringComparison.OrdinalIgnoreCase) == 0)
@@ -123,7 +173,7 @@ namespace teac
                 else
                 {
                     if ((sourceLanguageDirectory == null) &&
-                        (string.Compare(sourceLanguage, "values", StringComparison.OrdinalIgnoreCase) == 0))
+                        (string.Compare(current.Name, "values", StringComparison.OrdinalIgnoreCase) == 0))
                     {
                         // If we haven't found an exact match for the source language directory, assume it to be the "values" subdirectory
                         sourceLanguageDirectory = current;
@@ -131,7 +181,23 @@ namespace teac
                 }
             }
 
-            return (sourceLanguageDirectory, targetLanguageDirectory);
+            bool error = false;
+            if (sourceLanguageDirectory == null)
+            {
+                Console.WriteLine("\nERROR: values directory for language {0:s} not found", sourceLanguage);
+                error = true;
+            }
+            if (targetLanguageDirectory == null)
+            {
+                Console.WriteLine("\nERROR: values directory for language {0:s} not found", targetLanguage);
+                error = true;
+            }
+            if (error)
+                return false;
+
+            Console.WriteLine("Source langauage directory: {0:s}", sourceLanguageDirectory.FullName);
+            Console.WriteLine("Target langauage directory: {0:s}", targetLanguageDirectory.FullName);
+            return true;
         }
 
         private const string OutputFileNameTemplate = "{0:s}-to-{1:s}.xlsx";

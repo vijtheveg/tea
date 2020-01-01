@@ -18,14 +18,31 @@ namespace Com.MeraBills.StringResourceReaderWriter
 
         public static string ReadStringValue(XmlReader reader)
         {
-            if (reader.NodeType == XmlNodeType.EndElement)
+            if (reader.IsEmptyElement)
+            {
+                // Read past the empty element
+                reader.Skip();
+
                 return null;
+            }
 
-            if (reader.NodeType != XmlNodeType.Text)
-                throw new ArgumentException("Text expected");
-
-            string result = reader.Value;
+            // Read past the start element
             reader.Read();
+
+            string result = null;
+            if (reader.NodeType != XmlNodeType.EndElement)
+            {
+                if (reader.NodeType != XmlNodeType.Text)
+                    throw new ArgumentException("Text expected");
+
+                result = reader.Value;
+
+                // Read past the text node
+                reader.Read();
+            }
+
+            // Read past the end element
+            reader.ReadEndElement();
 
             return result;
         }

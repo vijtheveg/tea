@@ -2,7 +2,8 @@
   "profiles": {
     "teac": {
       "commandName": "Project",
-      "commandLineArgs": "ee en tu"
+      "commandLineArgs": "ee en te",
+      "workingDirectory": "C:\\Sources\\merchant-app-android\\app\\src\\main\\res"
     }
   }
 }

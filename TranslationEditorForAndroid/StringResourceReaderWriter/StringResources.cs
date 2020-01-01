@@ -13,29 +13,22 @@ namespace Com.MeraBills.StringResourceReaderWriter
             this.Strings = new Dictionary<string, StringResource>(StringComparer.Ordinal);
         }
 
-        public void Read(string fileName, XmlReader reader)
+        public uint Read(string fileName, XmlReader reader)
         {
+            uint count = 0;
+
             if (string.IsNullOrEmpty(fileName))
                 throw new ArgumentNullException(nameof(fileName));
 
-            // Skip to the first element
-            while (reader.Read())
-            {
-                if (reader.NodeType != XmlNodeType.Element)
-                {
-                    reader.Skip();
-                    continue;
-                }
+            if (!reader.ReadToFollowing(ResourcesElementName) || reader.IsEmptyElement)
+                return count; // Not a resources file or an empty resources file
 
-                if (string.CompareOrdinal(reader.LocalName, ResourcesElementName) != 0)
-                    return; // Not a resources file
-                else
-                    break;
-            }
+            if (!reader.Read())
+                throw new ArgumentException("Reader ended unexpectedly");
 
             // This is a resources file - read the resources
             List<string> commentLines = null;
-            while (reader.Read())
+            while (reader.NodeType != XmlNodeType.EndElement)
             {
                 if (reader.NodeType == XmlNodeType.Comment)
                 {
@@ -43,11 +36,12 @@ namespace Com.MeraBills.StringResourceReaderWriter
                         commentLines = new List<string>();
 
                     commentLines.Add(reader.Value);
+                    reader.Skip();
                     continue;
                 }
 
                 ResourceType resourceType = ResourceType.Other;
-                if (reader.NodeType != XmlNodeType.Element)
+                if (reader.NodeType == XmlNodeType.Element)
                     resourceType = StringResource.GetResourceType(reader.LocalName);
 
                 if (resourceType == ResourceType.Other)
@@ -61,8 +55,10 @@ namespace Com.MeraBills.StringResourceReaderWriter
                 }
 
                 // This is a string resource
-                StringResource stringResource = new StringResource(resourceType, reader);
-                stringResource.FileName = fileName;
+                var stringResource = new StringResource(resourceType, reader)
+                {
+                    FileName = fileName
+                };
                 if ((commentLines != null) && (commentLines.Count > 0))
                 {
                     if (this.IsSourceLanguage)
@@ -79,10 +75,13 @@ namespace Com.MeraBills.StringResourceReaderWriter
                     commentLines.Clear();
                 }
 
+                ++count;
                 this.Strings.Add(stringResource.Name, stringResource);
             }
 
             reader.ReadEndElement();
+
+            return count;
         }
 
         public const string ResourcesElementName = "resources";

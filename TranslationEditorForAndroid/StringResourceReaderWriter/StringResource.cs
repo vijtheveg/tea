@@ -27,17 +27,12 @@ namespace Com.MeraBills.StringResourceReaderWriter
             attributeValue = reader.GetAttribute(FormattedAttributeName);
             this.HasFormatSpecifiers = attributeValue == null ? HasFormatSpecifiersDefault : (string.CompareOrdinal(attributeValue, FalseValue) != 0);
 
-            if (!reader.Read())
-                throw new ArgumentException("Reader ended unexpectedly");
-
             if (resouceType == ResourceType.String)
                 this.Content = new StringContent(reader);
             else if (this.ResourceType == ResourceType.StringArray)
                 this.Content = new StringArrayContent(reader);
             else
                 this.Content = new PluralsContent(reader);
-
-            reader.ReadEndElement();
         }
 
         public static ResourceType GetResourceType(string elementName)

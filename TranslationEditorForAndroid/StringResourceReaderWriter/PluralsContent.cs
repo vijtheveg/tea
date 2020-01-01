@@ -9,16 +9,26 @@ namespace Com.MeraBills.StringResourceReaderWriter
     {
         public PluralsContent(XmlReader reader) : base(reader)
         {
-            if (reader.NodeType == XmlNodeType.EndElement)
-                return;
+            this.Values = new Dictionary<string, string>(StringComparer.Ordinal);
 
-            while(reader.Read())
+            if (reader.IsEmptyElement)
             {
-                if (reader.NodeType == XmlNodeType.EndElement)
-                    break;
+                // Read past the empty element
+                reader.Skip();
+                return;
+            }
 
+            // Read past the start element
+            if (!reader.Read())
+                throw new ArgumentException("Reader ended unexpectedly");
+
+            while (reader.NodeType != XmlNodeType.EndElement)
+            {
                 if (reader.NodeType != XmlNodeType.Element)
+                {
+                    reader.Skip();
                     continue;   // Ignore everything but elements
+                }
 
                 if (string.CompareOrdinal(reader.LocalName, ItemElementName) != 0)
                     throw new ArgumentException("<item> expected");
@@ -27,16 +37,12 @@ namespace Com.MeraBills.StringResourceReaderWriter
                 if (string.IsNullOrEmpty(quantity))
                     throw new ArgumentException("quantity attriute is required");
 
-                if (!reader.Read())
-                    throw new ArgumentException("Reader ended unexpectedly");
-
                 string value = StringContent.ReadStringValue(reader);
-                if (this.Values == null)
-                    this.Values = new Dictionary<string, string>(StringComparer.Ordinal);
                 this.Values.Add(quantity, value);
-
-                reader.ReadEndElement();
             }
+
+            // Read past the end element
+            reader.ReadEndElement();
         }
 
         public override void Write(XmlWriter writer)
