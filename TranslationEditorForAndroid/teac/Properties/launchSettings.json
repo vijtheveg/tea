@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "teac": {
+      "commandName": "Project",
+      "commandLineArgs": "ee en tu"
+    }
+  }
+}

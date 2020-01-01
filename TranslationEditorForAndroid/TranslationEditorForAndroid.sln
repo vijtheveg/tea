@@ -3,13 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29613.14
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WindowsUI", "WindowsUI\WindowsUI.csproj", "{B339B51F-F73C-4D58-8941-C1D5B6901472}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutomaticTranslator", "AutomaticTranslator\AutomaticTranslator.csproj", "{4918C72D-76AF-4E0F-AEE3-9D7CB226B4AA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Atac", "Atac\Atac.csproj", "{39E88E6E-AEB0-4D1E-8AD5-2DC89138EB17}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StringResourceReaderWriter", "StringResourceReaderWriter\StringResourceReaderWriter.csproj", "{E1589A4E-3A0A-43B3-A3B5-7451358067AB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StringResourceReaderWriter", "StringResourceReaderWriter\StringResourceReaderWriter.csproj", "{E1589A4E-3A0A-43B3-A3B5-7451358067AB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "teac", "teac\teac.csproj", "{F3BC15C1-6DE9-466A-9BA6-9C88ABF3FF63}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,22 +15,18 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{B339B51F-F73C-4D58-8941-C1D5B6901472}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B339B51F-F73C-4D58-8941-C1D5B6901472}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B339B51F-F73C-4D58-8941-C1D5B6901472}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B339B51F-F73C-4D58-8941-C1D5B6901472}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4918C72D-76AF-4E0F-AEE3-9D7CB226B4AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4918C72D-76AF-4E0F-AEE3-9D7CB226B4AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4918C72D-76AF-4E0F-AEE3-9D7CB226B4AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4918C72D-76AF-4E0F-AEE3-9D7CB226B4AA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{39E88E6E-AEB0-4D1E-8AD5-2DC89138EB17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{39E88E6E-AEB0-4D1E-8AD5-2DC89138EB17}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{39E88E6E-AEB0-4D1E-8AD5-2DC89138EB17}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{39E88E6E-AEB0-4D1E-8AD5-2DC89138EB17}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E1589A4E-3A0A-43B3-A3B5-7451358067AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E1589A4E-3A0A-43B3-A3B5-7451358067AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E1589A4E-3A0A-43B3-A3B5-7451358067AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E1589A4E-3A0A-43B3-A3B5-7451358067AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F3BC15C1-6DE9-466A-9BA6-9C88ABF3FF63}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F3BC15C1-6DE9-466A-9BA6-9C88ABF3FF63}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F3BC15C1-6DE9-466A-9BA6-9C88ABF3FF63}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F3BC15C1-6DE9-466A-9BA6-9C88ABF3FF63}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -20,7 +20,7 @@ namespace Com.MeraBills.StringResourceReaderWriter
                 if (reader.NodeType != XmlNodeType.Element)
                     continue;   // Ignore everything but elements
 
-                if (string.CompareOrdinal(reader.Name, ItemElementName) != 0)
+                if (string.CompareOrdinal(reader.LocalName, ItemElementName) != 0)
                     throw new ArgumentException("<item> expected");
 
                 string quantity = reader.GetAttribute(QuantityAttributeName);

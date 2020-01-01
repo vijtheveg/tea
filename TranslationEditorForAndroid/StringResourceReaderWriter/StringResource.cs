@@ -112,7 +112,7 @@ namespace Com.MeraBills.StringResourceReaderWriter
             if (!reader.Read())
                 throw new ArgumentException("Reader ended unexpectedly");
 
-            var resourceType = GetResourceType(reader.Name);
+            var resourceType = GetResourceType(reader.LocalName);
             return new StringResource(resourceType, reader);
         }
 
@@ -142,7 +142,7 @@ namespace Com.MeraBills.StringResourceReaderWriter
             }
         }
 
-        public void TrySetContentFromComment(string comment)
+        public void TrySetSourceFromComment(string comment)
         {
             if (string.IsNullOrEmpty(comment))
                 return;
