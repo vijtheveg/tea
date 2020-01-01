@@ -59,6 +59,21 @@ namespace Com.MeraBills.StringResourceReaderWriter
             }
         }
 
+        public override bool IsTranslationRequired
+        {
+            get
+            {
+                if ((this.Values == null) || (this.Values.Count <= 0))
+                    return false;
+
+                foreach (string value in this.Values.Values)
+                    if (StringContent.HasNonEmptyContent(value))
+                        return true;
+
+                return false;
+            }
+        }
+
         public override bool Equals(object obj)
         {
             return Equals(obj as PluralsContent);

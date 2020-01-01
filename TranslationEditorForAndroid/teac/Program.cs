@@ -82,6 +82,17 @@ namespace teac
             StringResources targetStrings = ParseDirectory(targetLanguage, false, targetLanguageDirectory);
             if (targetStrings == null)
                 return; // Something went wrong
+
+            Console.WriteLine("Writing output file ... ");
+            try
+            {
+                ExcelWriter.Write(sourceStrings, targetStrings, outputFile);
+                Console.WriteLine("Done!\n");
+            }
+            catch
+            {
+                Console.WriteLine("ERROR: Could not create output file. Make sure you have write access and that the file is not open in Excel.");
+            }
         }
 
         private static void ExcelImport(string sourceLanguage, string targetLanguage, FileInfo inputFile)

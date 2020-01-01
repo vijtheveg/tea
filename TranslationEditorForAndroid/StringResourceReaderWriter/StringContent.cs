@@ -53,6 +53,16 @@ namespace Com.MeraBills.StringResourceReaderWriter
                 writer.WriteValue(value);
         }
 
+        public override bool IsTranslationRequired
+        {
+            get => HasNonEmptyContent(this.Value);
+        }
+
+        public static bool HasNonEmptyContent(string value)
+        {
+            return !string.IsNullOrEmpty(value) && !string.IsNullOrEmpty(value.Trim());
+        }
+
         public override bool Equals(object obj)
         {
             return Equals(obj as StringContent);

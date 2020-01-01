@@ -76,6 +76,11 @@ namespace Com.MeraBills.StringResourceReaderWriter
             writer.WriteEndElement();
         }
 
+        public bool IsTranslationRequired
+        {
+            get => (this.Content != null) && this.Content.IsTranslationRequired;
+        }
+
         public override string ToString()
         {
             var writerSettings = new XmlWriterSettings
@@ -165,7 +170,7 @@ namespace Com.MeraBills.StringResourceReaderWriter
             return other != null &&
                    ResourceType == other.ResourceType &&
                    string.CompareOrdinal(Name, other.Name) == 0 &&
-                   EqualityComparer<ResourceContent>.Default.Equals(Content, other.Content);
+                   ResourceContent.Equals(this.Content, other.Content);
         }
 
         public override int GetHashCode()
