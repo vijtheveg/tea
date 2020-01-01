@@ -158,7 +158,14 @@ namespace teac
                 if (match.Success)
                 {
                     // Get the language of the current values directory
-                    string language = match.Groups[1].Value;
+                    string language = null;
+                    foreach (Group group in match.Groups)
+                        if (string.CompareOrdinal(group.Name, LanguageCodeSubexpressionName) == 0)
+                        {
+                            language = group.Value;
+                            break;
+                        }
+
                     if (string.Compare(sourceLanguage, language, StringComparison.OrdinalIgnoreCase) == 0)
                         sourceLanguageDirectory = current;
                     else if (string.Compare(targetLanguage, language, StringComparison.OrdinalIgnoreCase) == 0)
@@ -196,9 +203,10 @@ namespace teac
         }
 
         private const string OutputFileNameTemplate = "{0:s}-to-{1:s}.xlsx";
+        private const string LanguageCodeSubexpressionName = "lc";
 
         private static readonly Regex ValuesDirectoryNameRegex = new Regex(
-            @"^values(?:-mcc\d+(?:-mnc\d+)?)?-((?:([a-z]{2})(?:-[A-z]+)?)|(?:b\+([a-z]{2})(?:\+[\w\d]+)?))(?:-[\w\d-]+)?$",
+            @"^values(?:-mcc\d+(?:-mnc\d+)?)?-(?:(?:(?<" + LanguageCodeSubexpressionName + @">[a-z]{2})(?:-[A-z]+)?)|(?:b\+(?<" + LanguageCodeSubexpressionName + @">[a-z]{2})(?:\+[\w\d]+)?))(?:-[\w\d-]+)?$",
             RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Singleline);
     }
 }
