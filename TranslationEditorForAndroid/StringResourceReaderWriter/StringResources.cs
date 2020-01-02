@@ -10,7 +10,7 @@ namespace Com.MeraBills.StringResourceReaderWriter
         {
             this.Language = string.IsNullOrEmpty(language) ? throw new ArgumentNullException(nameof(language)) : language;
             this.IsSourceLanguage = isSourceLanguage;
-            this.Strings = new Dictionary<string, StringResource>(StringComparer.Ordinal);
+            this.Strings = new SortedDictionary<string, StringResource>(StringComparer.Ordinal);
         }
 
         public uint Read(string fileName, XmlReader reader)
@@ -91,6 +91,6 @@ namespace Com.MeraBills.StringResourceReaderWriter
 
         public readonly string Language;
         public readonly bool IsSourceLanguage;
-        public readonly Dictionary<string, StringResource> Strings;
+        public readonly SortedDictionary<string, StringResource> Strings;
     }
 }

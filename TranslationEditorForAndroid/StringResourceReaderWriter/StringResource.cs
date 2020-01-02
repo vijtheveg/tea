@@ -13,7 +13,10 @@ namespace Com.MeraBills.StringResourceReaderWriter
         {
             if (resouceType == ResourceType.Other)
                 throw new ArgumentException("A string resource type must be specified");
+
             this.ResourceType = resouceType;
+            this.IsTranslatable = IsTranslatableDefault;
+            this.HasFormatSpecifiers = HasFormatSpecifiersDefault;
 
             if (resouceType == ResourceType.String)
                 this.Content = new StringContent();
@@ -81,9 +84,9 @@ namespace Com.MeraBills.StringResourceReaderWriter
             writer.WriteEndElement();
         }
 
-        public bool IsTranslationRequired
+        public bool HasNonEmptyContent
         {
-            get => (this.Content != null) && this.Content.IsTranslationRequired;
+            get => (this.Content != null) && this.Content.HasNonEmptyContent;
         }
 
         public override string ToString()
@@ -96,10 +99,13 @@ namespace Com.MeraBills.StringResourceReaderWriter
                 OmitXmlDeclaration = true
             };
 
-            var result = new StringBuilder();
-            using var writer = XmlWriter.Create(result, writerSettings);
-            this.Write(writer);
-            return result.ToString();
+            using(var memoryStream = new MemoryStream())
+            {
+                using (var writer = XmlWriter.Create(memoryStream, writerSettings))
+                    this.Write(writer);
+
+                return System.Convert.ToBase64String(memoryStream.ToArray());
+            }
         }
 
         public static StringResource FromString(string serialized)
@@ -107,18 +113,21 @@ namespace Com.MeraBills.StringResourceReaderWriter
             if (string.IsNullOrEmpty(serialized))
                 throw new ArgumentNullException(nameof(serialized));
 
-            using var stringReader = new StringReader(serialized);
             var readerSettings = new XmlReaderSettings
             {
                 Async = false,
                 IgnoreComments = true
             };
-            using var reader = XmlReader.Create(stringReader, readerSettings);
-            if (!reader.Read())
-                throw new ArgumentException("Reader ended unexpectedly");
 
-            var resourceType = GetResourceType(reader.LocalName);
-            return new StringResource(resourceType, reader);
+            using(var memoryStream = new MemoryStream(System.Convert.FromBase64String(serialized)))
+            {
+                using var reader = XmlReader.Create(memoryStream, readerSettings);
+                if (!reader.Read())
+                    throw new ArgumentException("Reader ended unexpectedly");
+
+                var resourceType = GetResourceType(reader.LocalName);
+                return new StringResource(resourceType, reader);
+            }
         }
 
         public void SetContent(ResourceContent newContent)
@@ -189,7 +198,7 @@ namespace Com.MeraBills.StringResourceReaderWriter
 
         public bool HasFormatSpecifiers { get; set; }
 
-        public readonly bool IsTranslatable;
+        public bool IsTranslatable { get; set; }
 
         public ResourceContent Content { get; private set; }
 
@@ -207,7 +216,7 @@ namespace Com.MeraBills.StringResourceReaderWriter
         public const string FormattedAttributeName = "formatted";
         public const string TrueValue = "true";
         public const string FalseValue = "false";
-        public const string DoNotModify = "--DO NOT EDIT--";
+        public const string DoNotModify = "**DO NOT EDIT**";
 
         public const bool IsTranslatableDefault = true;
         public const bool HasFormatSpecifiersDefault = true;

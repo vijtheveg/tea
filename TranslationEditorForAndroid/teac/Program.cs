@@ -1,8 +1,10 @@
 ﻿using Com.MeraBills.StringResourceReaderWriter;
 using System;
+using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.IO;
+using System.Security;
 using System.Text.RegularExpressions;
 using System.Xml;
 
@@ -12,8 +14,10 @@ namespace teac
     {
         static void Main(string[] args)
         {
-            var rootCommand = new RootCommand(description: "Translactions Editor for Android (Console)");
-            rootCommand.TreatUnmatchedTokensAsErrors = true;
+            var rootCommand = new RootCommand(description: "Translactions Editor for Android (Console)")
+            {
+                TreatUnmatchedTokensAsErrors = true
+            };
 
             {
                 var exportCommand = new Command("excel-export");
@@ -21,9 +25,11 @@ namespace teac
                 exportCommand.Description = "Export source language strings and their target language translations to an Excel file";
                 exportCommand.TreatUnmatchedTokensAsErrors = true;
 
-                var fileArgument = new Argument<FileInfo>("output-file");
-                fileArgument.Description = "Path to output Excel file";
-                fileArgument.Arity = ArgumentArity.ZeroOrOne;
+                var fileArgument = new Argument<FileInfo>("output-file")
+                {
+                    Description = "Path to output Excel file",
+                    Arity = ArgumentArity.ZeroOrOne
+                };
 
                 exportCommand.AddArgument(CreateLanguageCodeArgument("source-language"));
                 exportCommand.AddArgument(CreateLanguageCodeArgument("target-language"));
@@ -39,9 +45,11 @@ namespace teac
                 importCommand.Description = "Import target language translations of source language strings from an Excel file";
                 importCommand.TreatUnmatchedTokensAsErrors = true;
 
-                var fileArgument = new Argument<FileInfo>("input-file");
-                fileArgument.Description = "Path to input Excel file";
-                fileArgument.Arity = ArgumentArity.ExactlyOne;
+                var fileArgument = new Argument<FileInfo>("input-file")
+                {
+                    Description = "Path to input Excel file",
+                    Arity = ArgumentArity.ExactlyOne
+                };
 
                 importCommand.AddArgument(CreateLanguageCodeArgument("source-language"));
                 importCommand.AddArgument(CreateLanguageCodeArgument("target-language"));
@@ -63,9 +71,7 @@ namespace teac
             Console.WriteLine("Target language code: {0:s}", targetLanguage);
             Console.WriteLine("Output file: {0:s}", outputFile.FullName);
 
-            DirectoryInfo sourceLanguageDirectory;
-            DirectoryInfo targetLanguageDirectory;
-            if (!FindStringResourceDirectories(sourceLanguage, targetLanguage, out sourceLanguageDirectory, out targetLanguageDirectory))
+            if (!FindStringResourceDirectories(sourceLanguage, targetLanguage, out DirectoryInfo sourceLanguageDirectory, out DirectoryInfo targetLanguageDirectory))
                 return;
 
             DirectoryInfo outputFileDirectory = outputFile.Directory;
@@ -103,9 +109,7 @@ namespace teac
             Console.WriteLine("Target language code: {0:s}", targetLanguage);
             Console.WriteLine("Input file: {0:s}", inputFile.FullName);
 
-            DirectoryInfo sourceLanguageDirectory;
-            DirectoryInfo targetLanguageDirectory;
-            if (!FindStringResourceDirectories(sourceLanguage, targetLanguage, out sourceLanguageDirectory, out targetLanguageDirectory))
+            if (!FindStringResourceDirectories(sourceLanguage, targetLanguage, out DirectoryInfo sourceLanguageDirectory, out DirectoryInfo targetLanguageDirectory))
                 return;
 
             if (!inputFile.Exists)
@@ -118,15 +122,209 @@ namespace teac
             if (sourceStrings == null)
                 return; // Something went wrong
 
-            StringResources targetStrings = ParseDirectory(targetLanguage, false, targetLanguageDirectory);
-            if (targetStrings == null)
+            StringResources targetStringsFromXml = ParseDirectory(targetLanguage, false, targetLanguageDirectory);
+            if (targetStringsFromXml == null)
                 return; // Something went wrong
 
+            StringResources targetStringsFromExcel;
+            try
+            {
+                targetStringsFromExcel = ExcelReaderWriter.Read(sourceLanguage, targetLanguage, inputFile);
+            }
+            catch (ArgumentException)
+            {
+                Console.WriteLine("ERROR: The input file does not seem to contain translations");
+                return;
+            }
+            catch(InvalidDataException ide)
+            {
+                Console.WriteLine("ERROR: The data in the input file is not valid.\n  {0:s}", ide.Message);
+                return;
+            }
+            catch
+            {
+                Console.WriteLine("ERROR: The input file could not be parsed. Are you sure it is an Excel file?");
+                return;
+            }
+
+            // Merge the strings from the resource files and Excel file
+            var targetStrings = Merge(sourceStrings, targetStringsFromXml, targetStringsFromExcel);
+
+            Console.WriteLine("Recreating target directory ... ");
+            try
+            {
+                if (RecreateTargetDirectory(targetLanguageDirectory, targetStrings))
+                    Console.WriteLine("Done!\n");
+            }
+            catch
+            {
+                Console.WriteLine("ERROR: Could not recreate the resource files in the target directory");
+            }
+        }
+
+        private static bool RecreateTargetDirectory(DirectoryInfo targetLanguageDirectory, StringResources targetStrings)
+        {
+            int count = 0;
+            Console.WriteLine("Deleting all resource files in the target directory {0:s} ...", targetLanguageDirectory.FullName);
+            foreach (var xmlFile in targetLanguageDirectory.GetFiles("*.xml"))
+            {
+                try
+                {
+                    xmlFile.Delete();
+                    ++count;
+                }
+                catch(IOException)
+                {
+                    Console.WriteLine("ERROR: File {0:s} could not be deleted - it is most probably open in another application", xmlFile.Name);
+                    return false;
+                }
+                catch(SecurityException)
+                {
+                    Console.WriteLine("ERROR: File {0:s} could not be deleted - you do not have the permissions required to delete it", xmlFile.Name);
+                    return false;
+                }
+            }
+            Console.WriteLine("{0:d} resource files deleted", count);
+
+            Console.WriteLine("Recreating resource files in the target directory {0:s} ...", targetLanguageDirectory.FullName);
+            var writerSettings = new XmlWriterSettings()
+            { 
+                Async = false,
+                CloseOutput = true,
+                Indent = true,
+                IndentChars = "    ",
+                NewLineOnAttributes = false,
+                OmitXmlDeclaration = false
+            };
+
+            uint totalFiles = 0;
+            uint totalStrings = 0;
+            var xmlWriters = new Dictionary<string, XmlWriter>(StringComparer.Ordinal);
+            try
+            {
+                // Write each target string to its corresponding resource file
+                foreach(var targetString in targetStrings.Strings.Values)
+                {
+                    if (!targetString.HasNonEmptyContent)
+                        continue;
+
+                    if (!xmlWriters.TryGetValue(targetString.FileName, out var xmlWriter))
+                    {
+                        // This is the first string in this resource file
+                        StreamWriter outputStream = null;
+                        XmlWriter temp = null;
+                        try
+                        {
+                            // Create the resource file
+                            outputStream = new StreamWriter(Path.Combine(targetLanguageDirectory.FullName, targetString.FileName));
+                            temp = XmlWriter.Create(outputStream, writerSettings);
+                            xmlWriters.Add(targetString.FileName, temp);
+                            xmlWriter = temp;
+                            outputStream = null;
+                            temp = null;
+
+                            // Write the resources start element
+                            xmlWriter.WriteStartElement(StringResources.ResourcesElementName);
+                            ++totalFiles;
+                        }
+                        finally
+                        {
+                            if (outputStream != null)
+                                outputStream.Close();
+
+                            if (temp != null)
+                                temp.Close();
+                        }
+                    }
+
+                    targetString.Write(xmlWriter);
+                    ++totalStrings;
+                }
+
+                // Write the resources end element in each resource file
+                foreach (var xmlWriter in xmlWriters.Values)
+                    xmlWriter.WriteEndElement();
+            }
+            catch
+            {
+                Console.WriteLine("ERROR: One or more resource files could not be created");
+                return false;
+            }
+            finally
+            {
+                foreach (var xmlWriter in xmlWriters.Values)
+                    if (xmlWriter != null)
+                        xmlWriter.Close();
+            }
+
+            Console.WriteLine("Created {0:d} resource files with a total of {1:d} string resources.\n", totalFiles, totalStrings);
+            return true;
+        }
+
+        private static StringResources Merge(StringResources sourceStrings, StringResources targetStringsFromXml, StringResources targetStringsFromExcel)
+        {
+            var targetStrings = new StringResources(targetStringsFromXml.Language, isSourceLanguage: false);
+            foreach(var sourceString in sourceStrings.Strings.Values)
+            {
+                var targetStringFromXml = GetTargetString(sourceString, targetStringsFromXml);
+                var targetStringFromExcel = GetTargetString(sourceString, targetStringsFromExcel);
+
+                StringResource targetString;
+                if (targetStringFromExcel == null)
+                {
+                    // Target string does not exist in Excel. Use the one from the XML, if any
+                    targetString = targetStringFromXml ?? null;
+                }
+                else if (targetStringFromXml == null)
+                {
+                    // Target string exists in Excel, but not in XML
+                    targetString = targetStringFromExcel;
+                }
+                else
+                {
+                    // Target string exists in both Excel and XML
+                    if ((targetStringFromExcel.Source != null) == (targetStringFromXml.Source != null))
+                    {
+                        // Both strings are either final or not final - prefer the one from the Excel file
+                        targetString = targetStringFromExcel;
+                    }
+                    else
+                    {
+                        // Only one of the translations is marked as final - keep the one that is marked as final
+                        targetString = targetStringFromExcel.Source != null ? targetStringFromExcel : targetStringFromXml;
+                    }
+                }
+
+                if (targetString != null)
+                    targetStrings.Strings.Add(targetString.Name, targetString);
+            }
+
+            return targetStrings;
+        }
+
+        private static StringResource GetTargetString(StringResource sourceString, StringResources targetStrings)
+        {
+            if (!sourceString.IsTranslatable || !sourceString.HasNonEmptyContent)
+                return null;    // A translation is not required
+
+            if (targetStrings.Strings.TryGetValue(sourceString.Name, out var targetString) && (sourceString.ResourceType == targetString.ResourceType))
+            {
+                targetString.FileName = sourceString.FileName;
+                targetString.HasFormatSpecifiers = sourceString.HasFormatSpecifiers;
+                targetString.IsTranslatable = true;
+                if ((targetString.Source != null) && !targetString.Source.Equals(sourceString))
+                    targetString.Source = null; // The source string is no longer the same as the source of the translation
+                targetString.CommentLines = null;
+                return targetString;
+            }
+
+            // A translation is not found, or the resource type of the source is no longer the same as that of the target
+            return null;
         }
 
         private static StringResources ParseDirectory(string language, bool isSourceLanguage, DirectoryInfo languageDirectory)
         {
-            StringResources stringResources = new StringResources(language, isSourceLanguage: true);
+            StringResources stringResources = new StringResources(language, isSourceLanguage);
             var readerSettings = new XmlReaderSettings()
             {
                 Async = false,
@@ -136,7 +334,7 @@ namespace teac
             uint totalFiles = 0;
             uint errors = 0;
             uint totalStrings = 0;
-            Console.WriteLine("\nParsing XML files in {0:s} language directory ...", isSourceLanguage ? "source" : "target");
+            Console.WriteLine("\nParsing resource files in {0:s} language directory ...", isSourceLanguage ? "source" : "target");
             foreach (var xmlFile in languageDirectory.GetFiles("*.xml"))
             {
                 ++totalFiles;
@@ -166,9 +364,11 @@ namespace teac
 
         private static Argument<string> CreateLanguageCodeArgument(string name)
         {
-            var languageCodeArgument = new Argument<string>(name);
-            languageCodeArgument.Description = "A two-letter ISO 639-1 language code ('en' or 'hi', for example)";
-            languageCodeArgument.Arity = ArgumentArity.ExactlyOne;
+            var languageCodeArgument = new Argument<string>(name)
+            {
+                Description = "A two-letter ISO 639-1 language code ('en' or 'hi', for example)",
+                Arity = ArgumentArity.ExactlyOne
+            };
             languageCodeArgument.AddValidator((argument) => {
                 string value = argument.Token?.Value;
                 if (string.IsNullOrEmpty(value) || value.Length != 2)
@@ -221,12 +421,12 @@ namespace teac
             bool error = false;
             if (sourceLanguageDirectory == null)
             {
-                Console.WriteLine("\nERROR: values directory for language {0:s} not found", sourceLanguage);
+                Console.WriteLine("\nERROR: values directory for source language {0:s} not found", sourceLanguage);
                 error = true;
             }
             if (targetLanguageDirectory == null)
             {
-                Console.WriteLine("\nERROR: values directory for language {0:s} not found", targetLanguage);
+                Console.WriteLine("\nERROR: values directory for target language {0:s} not found. Please create it and then try again", targetLanguage);
                 error = true;
             }
             if (error)

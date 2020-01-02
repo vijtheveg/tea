@@ -2,8 +2,8 @@
   "profiles": {
     "teac": {
       "commandName": "Project",
-      "commandLineArgs": "ee en mr",
-      "workingDirectory": "C:\\Sources\\merchant-app-android\\app\\src\\main\\res"
+      "commandLineArgs": "ee en mr en-to-mr.xlsx",
+      "workingDirectory": "d:\\Downloads\\Translations"
     }
   }
 }

@@ -11,7 +11,7 @@ namespace Com.MeraBills.StringResourceReaderWriter
 
         public abstract void Write(XmlWriter writer);
 
-        public abstract bool IsTranslationRequired { get; }
+        public abstract bool HasNonEmptyContent { get; }
 
         public static bool Equals(ResourceContent lhs, ResourceContent rhs)
         {

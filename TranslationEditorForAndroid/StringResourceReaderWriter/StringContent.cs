@@ -62,12 +62,12 @@ namespace Com.MeraBills.StringResourceReaderWriter
                 writer.WriteValue(value);
         }
 
-        public override bool IsTranslationRequired
+        public override bool HasNonEmptyContent
         {
-            get => HasNonEmptyContent(this.Value);
+            get => IsValueNonEmpty(this.Value);
         }
 
-        public static bool HasNonEmptyContent(string value)
+        public static bool IsValueNonEmpty(string value)
         {
             return !string.IsNullOrEmpty(value) && !string.IsNullOrEmpty(value.Trim());
         }

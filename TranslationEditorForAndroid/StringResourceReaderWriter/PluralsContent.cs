@@ -67,7 +67,7 @@ namespace Com.MeraBills.StringResourceReaderWriter
             }
         }
 
-        public override bool IsTranslationRequired
+        public override bool HasNonEmptyContent
         {
             get
             {
@@ -75,7 +75,7 @@ namespace Com.MeraBills.StringResourceReaderWriter
                     return false;
 
                 foreach (string value in this.Values.Values)
-                    if (StringContent.HasNonEmptyContent(value))
+                    if (StringContent.IsValueNonEmpty(value))
                         return true;
 
                 return false;

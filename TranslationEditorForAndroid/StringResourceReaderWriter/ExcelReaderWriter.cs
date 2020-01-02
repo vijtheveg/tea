@@ -2,6 +2,7 @@
 using OfficeOpenXml.Style;
 using System;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 
 namespace Com.MeraBills.StringResourceReaderWriter
@@ -28,7 +29,7 @@ namespace Com.MeraBills.StringResourceReaderWriter
             // Write the strings
             foreach(var sourceString in sourceStrings.Strings.Values)
             {
-                if (!sourceString.IsTranslatable || !sourceString.IsTranslationRequired)
+                if (!sourceString.IsTranslatable || !sourceString.HasNonEmptyContent)
                     continue;
 
                 // This is a string resource that requires translation
@@ -46,7 +47,8 @@ namespace Com.MeraBills.StringResourceReaderWriter
                 {
                     worksheet.Cells[row, 1].Value = sourceString.Name;
                     worksheet.Cells[row, 3].Value = ((StringContent)sourceString.Content).Value;
-                    worksheet.Cells[row, 4].Value = ((StringContent)targetString.Content).Value;
+                    if (targetString != null)
+                        worksheet.Cells[row, 4].Value = ((StringContent)targetString.Content).Value;
                     worksheet.Row(row).Style.Border.BorderAround(ExcelBorderStyle.Thin);
                     ++row;
                 }
@@ -59,7 +61,7 @@ namespace Com.MeraBills.StringResourceReaderWriter
                         worksheet.Cells[row, 1].Value = sourceString.Name;
                         worksheet.Cells[row, 2].Value = i;
                         worksheet.Cells[row, 3].Value = sourceContent.Values[i];
-                        if ((targetString.Content is StringArrayContent targetContent) && (i < targetContent.Values.Count))
+                        if ((targetString != null) && (targetString.Content is StringArrayContent targetContent) && (i < targetContent.Values.Count))
                         {
                             worksheet.Cells[row, 4].Value = targetContent.Values[i];
                         }
@@ -75,7 +77,7 @@ namespace Com.MeraBills.StringResourceReaderWriter
                         worksheet.Cells[row, 1].Value = sourceString.Name;
                         worksheet.Cells[row, 2].Value = pair.Key;
                         worksheet.Cells[row, 3].Value = pair.Value;
-                        if (targetString.Content is PluralsContent targetContent)
+                        if ((targetString != null) && (targetString.Content is PluralsContent targetContent))
                         {
                             if (targetContent.Values.TryGetValue(pair.Key, out string value))
                                 worksheet.Cells[row, 4].Value = value;
@@ -140,14 +142,33 @@ namespace Com.MeraBills.StringResourceReaderWriter
             var name = worksheet.Cells[row, 1].Value as string;
             while(!string.IsNullOrEmpty(name))
             {
-                var indexString = worksheet.Cells[row, 2].Value as string;
+                ResourceType resourceType = ResourceType.String;
+                string indexString = null;
+                ushort index = 0;
+                {
+                    var indexObject = worksheet.Cells[row, 2].Value;
+                    if (indexObject != null)
+                    {
+                        indexString = indexObject as string;
+                        if (indexString != null)
+                        {
+                            indexString = indexString.Trim();
+                            if (indexString.Length > 0)
+                                resourceType = ResourceType.Plurals;
+                        }
+                        else
+                        {
+                            index = (ushort)((double)indexObject);
+                            resourceType = ResourceType.StringArray;
+                        }
+                    }
+                }
                 var sourceString = worksheet.Cells[row, 3].Value as string;
                 var targetString = worksheet.Cells[row, 4].Value as string;
-                var final = string.Compare(worksheet.Cells[row, 5].Value as string, "y", StringComparison.OrdinalIgnoreCase) == 0;
+                bool final = worksheet.Cells[row, 5].Value is string finalString ? finalString.StartsWith("y", ignoreCase: true, CultureInfo.InvariantCulture) : false;
 
                 StringResource stringResource;
-                indexString = indexString.Trim();
-                if (string.IsNullOrEmpty(indexString))
+                if (resourceType == ResourceType.String)
                 {
                     if (targetStrings.Strings.TryGetValue(name, out stringResource))
                         throw new InvalidDataException(string.Format("A string resource with name {0:s} appears more than once", name));
@@ -171,7 +192,7 @@ namespace Com.MeraBills.StringResourceReaderWriter
                 }
                 else
                 {
-                    if (ushort.TryParse(indexString, out ushort index))
+                    if (resourceType == ResourceType.StringArray)
                     {
                         // This is a string array resource
                         bool indexOrderError = false;
@@ -296,7 +317,7 @@ namespace Com.MeraBills.StringResourceReaderWriter
 
         private const string NameHeader = "Name";
         private const string IndexHeader = "Index";
-        private const string FinalHeader = "Final (Y/N)";
+        private const string FinalHeader = "Final (Y/N)?";
         private static readonly Color LockedCellBackgroundColor = Color.FloralWhite;
     }
 }
