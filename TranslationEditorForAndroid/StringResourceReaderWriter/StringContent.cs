@@ -6,7 +6,16 @@ namespace Com.MeraBills.StringResourceReaderWriter
 {
     public sealed class StringContent : ResourceContent, IEquatable<StringContent>
     {
-        public StringContent(XmlReader reader) : base(reader)
+        public StringContent() : base()
+        {
+        }
+
+        public StringContent(XmlReader reader) : this()
+        {
+            Read(reader);
+        }
+
+        public override void Read(XmlReader reader)
         {
             this.Value = ReadStringValue(reader);
         }
@@ -79,6 +88,6 @@ namespace Com.MeraBills.StringResourceReaderWriter
             return HashCode.Combine(Value);
         }
 
-        public readonly string Value;
+        public string Value { get; set; }
     }
 }

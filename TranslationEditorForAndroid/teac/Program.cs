@@ -86,7 +86,7 @@ namespace teac
             Console.WriteLine("Writing output file ... ");
             try
             {
-                ExcelWriter.Write(sourceStrings, targetStrings, outputFile);
+                ExcelReaderWriter.Write(sourceStrings, targetStrings, outputFile);
                 Console.WriteLine("Done!\n");
             }
             catch
@@ -97,7 +97,31 @@ namespace teac
 
         private static void ExcelImport(string sourceLanguage, string targetLanguage, FileInfo inputFile)
         {
-            throw new NotImplementedException();
+            Console.WriteLine();
+
+            Console.WriteLine("Source language code: {0:s}", sourceLanguage);
+            Console.WriteLine("Target language code: {0:s}", targetLanguage);
+            Console.WriteLine("Input file: {0:s}", inputFile.FullName);
+
+            DirectoryInfo sourceLanguageDirectory;
+            DirectoryInfo targetLanguageDirectory;
+            if (!FindStringResourceDirectories(sourceLanguage, targetLanguage, out sourceLanguageDirectory, out targetLanguageDirectory))
+                return;
+
+            if (!inputFile.Exists)
+            {
+                Console.WriteLine("\nERROR: The input file {0:s} does not exist", inputFile.FullName);
+                return;
+            }
+
+            StringResources sourceStrings = ParseDirectory(sourceLanguage, true, sourceLanguageDirectory);
+            if (sourceStrings == null)
+                return; // Something went wrong
+
+            StringResources targetStrings = ParseDirectory(targetLanguage, false, targetLanguageDirectory);
+            if (targetStrings == null)
+                return; // Something went wrong
+
         }
 
         private static StringResources ParseDirectory(string language, bool isSourceLanguage, DirectoryInfo languageDirectory)

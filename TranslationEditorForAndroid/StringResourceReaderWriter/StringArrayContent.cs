@@ -7,10 +7,18 @@ namespace Com.MeraBills.StringResourceReaderWriter
 {
     public sealed class StringArrayContent : ResourceContent, IEquatable<StringArrayContent>
     {
-        public StringArrayContent(XmlReader reader) : base(reader)
+        public StringArrayContent() : base()
         {
             this.Values = new List<string>();
+        }
 
+        public StringArrayContent(XmlReader reader) : this()
+        {
+            Read(reader);
+        }
+
+        public override void Read(XmlReader reader)
+        {
             if (reader.IsEmptyElement)
             {
                 // Read past the empty element

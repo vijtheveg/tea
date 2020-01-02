@@ -9,12 +9,22 @@ namespace Com.MeraBills.StringResourceReaderWriter
 {
     public sealed class StringResource : IEquatable<StringResource>
     {
-        public StringResource(ResourceType resouceType, XmlReader reader)
+        public StringResource(ResourceType resouceType)
         {
             if (resouceType == ResourceType.Other)
                 throw new ArgumentException("A string resource type must be specified");
             this.ResourceType = resouceType;
 
+            if (resouceType == ResourceType.String)
+                this.Content = new StringContent();
+            else if (this.ResourceType == ResourceType.StringArray)
+                this.Content = new StringArrayContent();
+            else
+                this.Content = new PluralsContent();
+        }
+
+        public StringResource(ResourceType resouceType, XmlReader reader) : this(resouceType)
+        {
             if (reader.NodeType != XmlNodeType.Element)
                 throw new ArgumentException("Reader is not positioned on an element");
 
@@ -27,12 +37,7 @@ namespace Com.MeraBills.StringResourceReaderWriter
             attributeValue = reader.GetAttribute(FormattedAttributeName);
             this.HasFormatSpecifiers = attributeValue == null ? HasFormatSpecifiersDefault : (string.CompareOrdinal(attributeValue, FalseValue) != 0);
 
-            if (resouceType == ResourceType.String)
-                this.Content = new StringContent(reader);
-            else if (this.ResourceType == ResourceType.StringArray)
-                this.Content = new StringArrayContent(reader);
-            else
-                this.Content = new PluralsContent(reader);
+            this.Content.Read(reader);
         }
 
         public static ResourceType GetResourceType(string elementName)
@@ -180,9 +185,9 @@ namespace Com.MeraBills.StringResourceReaderWriter
 
         public readonly ResourceType ResourceType;
 
-        public readonly string Name;
+        public string Name { get; set; }
 
-        public readonly bool HasFormatSpecifiers;
+        public bool HasFormatSpecifiers { get; set; }
 
         public readonly bool IsTranslatable;
 
@@ -202,7 +207,7 @@ namespace Com.MeraBills.StringResourceReaderWriter
         public const string FormattedAttributeName = "formatted";
         public const string TrueValue = "true";
         public const string FalseValue = "false";
-        public const string DoNotModify = "--DO NOT MODIFY--";
+        public const string DoNotModify = "--DO NOT EDIT--";
 
         public const bool IsTranslatableDefault = true;
         public const bool HasFormatSpecifiersDefault = true;

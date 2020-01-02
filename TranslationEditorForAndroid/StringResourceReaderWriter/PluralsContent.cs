@@ -7,10 +7,18 @@ namespace Com.MeraBills.StringResourceReaderWriter
 {
     public sealed class PluralsContent : ResourceContent, IEquatable<PluralsContent>
     {
-        public PluralsContent(XmlReader reader) : base(reader)
+        public PluralsContent() : base()
         {
             this.Values = new Dictionary<string, string>(StringComparer.Ordinal);
+        }
 
+        public PluralsContent(XmlReader reader) : this()
+        {
+            Read(reader);
+        }
+
+        public override void Read(XmlReader reader)
+        {
             if (reader.IsEmptyElement)
             {
                 // Read past the empty element
