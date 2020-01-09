@@ -16,6 +16,11 @@ Localizing an appliation is not an easy process:
 
 The Translation Editor for Android console application (`teac`) solves these problems.
 
+## Step 0
+Go to <a href="https://github.com/vijtheveg/tea/releases">Releases<a/> and download `teac.zip` for the latest available version. Extract `teac.exe` from this zip file into any directory that is in your %PATH% environment variable.
+
+**NOTE**: Currently, `teac.exe` only works on Windows.
+
 ## Step 1
 Generate an Excel spreadsheet that displays the original language strings and the translation side-by-side.
 
@@ -55,3 +60,6 @@ The generated XML will look like this:
 
 ## Later
 If you add / delete / modify any strings in the source language at the later date, just do Steps 1-3 above again. This time `teac` will generate an Excel file that only contains new / modified strings and strings that were not marked as final.
+
+## Coming Soon!
+The ability to generate automatic translations. This can serve as a starting point for manual translations.
