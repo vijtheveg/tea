@@ -2,8 +2,8 @@
   "profiles": {
     "teac": {
       "commandName": "Project",
-      "commandLineArgs": "ee en mr en-to-mr.xlsx",
-      "workingDirectory": "d:\\Downloads\\Translations"
+      "commandLineArgs": "excel-import en kn en-to-kn.xlsx",
+      "workingDirectory": "%userprofile%\\downloads\\Translations"
     }
   }
 }

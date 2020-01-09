@@ -7,7 +7,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutomaticTranslator", "Auto
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StringResourceReaderWriter", "StringResourceReaderWriter\StringResourceReaderWriter.csproj", "{E1589A4E-3A0A-43B3-A3B5-7451358067AB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "teac", "teac\teac.csproj", "{F3BC15C1-6DE9-466A-9BA6-9C88ABF3FF63}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "teac", "teac\teac.csproj", "{F3BC15C1-6DE9-466A-9BA6-9C88ABF3FF63}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5D2DF13E-34C4-42B9-B90E-B12B07CCA072}"
+	ProjectSection(SolutionItems) = preProject
+		Images\excel_file.jpg = Images\excel_file.jpg
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
