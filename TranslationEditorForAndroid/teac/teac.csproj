@@ -3,6 +3,13 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <PublishTrimmed>true</PublishTrimmed>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <PublishSingleFile>true</PublishSingleFile>
+    <RuntimeIdentifier>win-x86</RuntimeIdentifier>
+    <Authors>vijtheveg</Authors>
+    <Company>MeraBills.com</Company>
+    <Product>Translations Editor for Android</Product>
   </PropertyGroup>
 
   <ItemGroup>
