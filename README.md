@@ -19,7 +19,7 @@ The Translation Editor for Android console application (`teac`) solves these pro
 ## Step 0
 Go to [Releases](https://github.com/vijtheveg/tea/releases) and download `teac.zip` for the latest available version. Extract `teac.exe` from this zip file into any directory that is in your %PATH% environment variable.
 
-**NOTE**: Currently, `teac.exe` only works on Windows.
+**NOTE**: Currently, `teac.exe` has only been tested on Windows.
 
 ## Step 1
 Generate an Excel spreadsheet that displays the original language strings and the translation side-by-side.
@@ -34,6 +34,8 @@ The generated Excel file (`en-to-kn.xlsx`) looks like this:
 <img align="left" style="margin:0px 15px 0px 0px" src="https://raw.githubusercontent.com/vijtheveg/tea/master/TranslationEditorForAndroid/Images/excel_file.jpg"/>
 
 &nbsp;
+
+**NOTE**: `excel-export` ignores strings in source language XML files that have the `translatable` attribute set to `false`.
 
 ## Step 2
 Send the Excel file generated above to your translator.
