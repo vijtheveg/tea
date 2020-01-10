@@ -24,7 +24,7 @@ Go to [Releases](https://github.com/vijtheveg/tea/releases) and download `teac.z
 ## Step 1
 Generate an Excel spreadsheet that displays the original language strings and the translation side-by-side.
 
-To do this, run `teac` with the `excel-export` command. **Important**: Make sure the current directory is the `res` directory of your android project!
+To do this, run `teac.exe` with the `excel-export` command. **Important**: Make sure the current directory is the `res` directory of your android project!
 ```
 C:\repo\my-android-app\app\src\main\res>teac.exe excel-export en kn en-to-kn.xlsx
 ```
@@ -47,7 +47,7 @@ Have the translator send the Excel file, with the translations filled, in back t
 ## Step 3
 Import the translations back into XML files.
 
-To do this, run `teac` with the `excel-import` command. **Important**: Make sure the current directory is the `res` directory of your android project!
+To do this, run `teac.exe` with the `excel-import` command. **Important**: Make sure the current directory is the `res` directory of your android project!
 ```
 C:\repo\my-android-app\app\src\main\res>teac.exe excel-import en kn en-to-kn.xlsx
 ```
