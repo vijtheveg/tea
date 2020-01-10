@@ -58,7 +58,7 @@ The generated XML will look like this:
 
 &nbsp;
 
-**NOTE**: The comment above a string resource in the target language XML file that starts with `**DO NOT EDIT**` indicates that the translated string below it is final, and does not need to be looked at again (final strings will not be in Excel files generated in [Step 1](#step-1) above). Delete this comment line if you want to re-translate a string.
+**NOTE**: The comment above a string resource in the target language XML file that starts with `**DO NOT EDIT**` indicates that the translated string below it is final, and does not need to be looked at again (final strings will not be in the Excel file generated in [Step 1](#step-1) above). Delete this comment line if you want to re-translate a string.
 
 ## Later
 If you add / delete / modify any strings in the source language at the later date, just do Steps 1-3 above again. This time `teac` will generate an Excel file that only contains new / modified strings and strings that were not marked as final.
