@@ -16,10 +16,15 @@ Localizing an appliation is not an easy process:
 
 The Translation Editor for Android console application (`teac`) solves these problems.
 
+## Step 0
+Go to [Releases](https://github.com/vijtheveg/tea/releases) and download `teac.zip` for the latest available version. Extract `teac.exe` from this zip file into any directory that is in your %PATH% environment variable.
+
+**NOTE**: Currently, `teac.exe` has only been tested on Windows.
+
 ## Step 1
 Generate an Excel spreadsheet that displays the original language strings and the translation side-by-side.
 
-To do this, run `teac` with the `excel-export` command. **Important**: Make sure the current directory is the `res` directory of your android project!
+To do this, run `teac.exe` with the `excel-export` command. **Important**: Make sure the current directory is the `res` directory of your android project!
 ```
 C:\repo\my-android-app\app\src\main\res>teac.exe excel-export en kn en-to-kn.xlsx
 ```
@@ -29,6 +34,8 @@ The generated Excel file (`en-to-kn.xlsx`) looks like this:
 <img align="left" style="margin:0px 15px 0px 0px" src="https://raw.githubusercontent.com/vijtheveg/tea/master/TranslationEditorForAndroid/Images/excel_file.jpg"/>
 
 &nbsp;
+
+**NOTE**: `excel-export` ignores strings in source language XML files that have the `translatable` attribute set to `false`.
 
 ## Step 2
 Send the Excel file generated above to your translator.
@@ -40,7 +47,7 @@ Have the translator send the Excel file, with the translations filled, in back t
 ## Step 3
 Import the translations back into XML files.
 
-To do this, run `teac` with the `excel-import` command. **Important**: Make sure the current directory is the `res` directory of your android project!
+To do this, run `teac.exe` with the `excel-import` command. **Important**: Make sure the current directory is the `res` directory of your android project!
 ```
 C:\repo\my-android-app\app\src\main\res>teac.exe excel-import en kn en-to-kn.xlsx
 ```
@@ -51,7 +58,10 @@ The generated XML will look like this:
 
 &nbsp;
 
-**NOTE**: The comment above a string resource in the target language XML file that starts with `**DO NOT EDIT**` indicates that the translated string below it is final, and does not need to be looked at again. Delete this comment line if you want to re-translate a string.
+**NOTE**: The comment above a string resource in the target language XML file that starts with `**DO NOT EDIT**` indicates that the translated string below it is final, and does not need to be looked at again (final strings will not be in the Excel file generated in [Step 1](#step-1) above). Delete this comment line if you want to re-translate a string.
 
 ## Later
 If you add / delete / modify any strings in the source language at the later date, just do Steps 1-3 above again. This time `teac` will generate an Excel file that only contains new / modified strings and strings that were not marked as final.
+
+## Coming Soon
+The ability to generate automatic translations. This can serve as a starting point for manual translations.
