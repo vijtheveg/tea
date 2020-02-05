@@ -9,7 +9,7 @@ namespace Com.MeraBills.StringResourceReaderWriter
 {
     public static class ExcelReaderWriter
     {
-        public static void Write(StringResources sourceStrings, StringResources targetStrings, FileInfo outputFile)
+        public static void Write(StringResources sourceStrings, StringResources targetStrings, FileInfo outputFile, bool exportAll)
         {
             using var package = new ExcelPackage();
 
@@ -33,13 +33,14 @@ namespace Com.MeraBills.StringResourceReaderWriter
                     continue;
 
                 // This is a string resource that requires translation
+
                 // Find existing translation, if any
+                bool isFinal = false;
                 if (targetStrings.Strings.TryGetValue(sourceString.Name, out StringResource targetString))
                 {
-                    // If the translation is final and the source has not changed since the target was finalized,
-                    // then we don't need to translate this string again
-                    if (sourceString.Equals(targetString.Source))
-                        continue;
+                    isFinal = sourceString.Equals(targetString.Source);
+                    if (isFinal && !exportAll)
+                        continue; // We don't need to export final strings
                 }
 
                 // Translation is required - write the source and target content
@@ -49,6 +50,7 @@ namespace Com.MeraBills.StringResourceReaderWriter
                     worksheet.Cells[row, 3].Value = ((StringContent)sourceString.Content).Value;
                     if (targetString != null)
                         worksheet.Cells[row, 4].Value = ((StringContent)targetString.Content).Value;
+                    worksheet.Cells[row, 5].Value = isFinal ? FinalYes : FinalNo;
                     worksheet.Row(row).Style.Border.BorderAround(ExcelBorderStyle.Thin);
                     ++row;
                 }
@@ -65,6 +67,7 @@ namespace Com.MeraBills.StringResourceReaderWriter
                         {
                             worksheet.Cells[row, 4].Value = targetContent.Values[i];
                         }
+                        worksheet.Cells[row, 5].Value = isFinal ? FinalYes : FinalNo;
                         ++row;
                     }
                     worksheet.Row(row).Style.Border.Top.Style = ExcelBorderStyle.Thin;
@@ -82,6 +85,7 @@ namespace Com.MeraBills.StringResourceReaderWriter
                             if (targetContent.Values.TryGetValue(pair.Key, out string value))
                                 worksheet.Cells[row, 4].Value = value;
                         }
+                        worksheet.Cells[row, 5].Value = isFinal ? FinalYes : FinalNo;
                         ++row;
                     }
                     worksheet.Row(row).Style.Border.Top.Style = ExcelBorderStyle.Thin;
@@ -317,7 +321,9 @@ namespace Com.MeraBills.StringResourceReaderWriter
 
         private const string NameHeader = "Name";
         private const string IndexHeader = "Index";
-        private const string FinalHeader = "Final (Y/N)?";
+        private const string FinalYes = "Y";
+        private const string FinalNo = "N";
+        private const string FinalHeader = "Final (" + FinalYes + "/" + FinalNo + ")?";
         private static readonly Color LockedCellBackgroundColor = Color.FloralWhite;
     }
 }

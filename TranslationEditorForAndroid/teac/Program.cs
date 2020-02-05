@@ -31,10 +31,18 @@ namespace teac
                     Arity = ArgumentArity.ZeroOrOne
                 };
 
+                var exportAllArgument = new Argument<bool>("export-all")
+                {
+                    Description = "Export all strings, final and non-final (default: False)",
+                    Arity = ArgumentArity.ZeroOrOne
+                };
+                exportAllArgument.SetDefaultValue(false);
+
                 exportCommand.AddArgument(CreateLanguageCodeArgument("source-language"));
                 exportCommand.AddArgument(CreateLanguageCodeArgument("target-language"));
                 exportCommand.AddArgument(fileArgument);
-                exportCommand.Handler = CommandHandler.Create<string, string, FileInfo>(ExcelExport);
+                exportCommand.AddArgument(exportAllArgument);
+                exportCommand.Handler = CommandHandler.Create<string, string, FileInfo, bool>(ExcelExport);
 
                 rootCommand.AddCommand(exportCommand);
             }
@@ -75,7 +83,7 @@ namespace teac
             rootCommand.Invoke(args);
         }
 
-        private static void ExcelExport(string sourceLanguage, string targetLanguage, FileInfo outputFile)
+        private static void ExcelExport(string sourceLanguage, string targetLanguage, FileInfo outputFile, bool exportAll)
         {
             Console.WriteLine();
 
@@ -83,6 +91,7 @@ namespace teac
             Console.WriteLine("Source language code: {0:s}", sourceLanguage);
             Console.WriteLine("Target language code: {0:s}", targetLanguage);
             Console.WriteLine("Output file: {0:s}", outputFile.FullName);
+            Console.WriteLine("Export all: {0:b}\n", exportAll);
 
             if (!FindStringResourceDirectories(sourceLanguage, targetLanguage, out DirectoryInfo sourceLanguageDirectory, out DirectoryInfo targetLanguageDirectory))
                 return;
@@ -105,7 +114,7 @@ namespace teac
             Console.WriteLine("Writing output file ... ");
             try
             {
-                ExcelReaderWriter.Write(sourceStrings, targetStrings, outputFile);
+                ExcelReaderWriter.Write(sourceStrings, targetStrings, outputFile, exportAll);
                 Console.WriteLine("Done!\n");
             }
             catch
