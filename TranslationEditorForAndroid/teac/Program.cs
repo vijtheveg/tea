@@ -59,6 +59,19 @@ namespace teac
                 rootCommand.AddCommand(importCommand);
             }
 
+            {
+                var updateCommand = new Command("update-target");
+                updateCommand.AddAlias("ut");
+                updateCommand.Description = "Update final status of target language translations and delete extra translations";
+                updateCommand.TreatUnmatchedTokensAsErrors = true;
+
+                updateCommand.AddArgument(CreateLanguageCodeArgument("source-language"));
+                updateCommand.AddArgument(CreateLanguageCodeArgument("target-language"));
+                updateCommand.Handler = CommandHandler.Create<string, string>(UpdateTarget);
+
+                rootCommand.AddCommand(updateCommand);
+            }
+
             rootCommand.Invoke(args);
         }
 
@@ -148,7 +161,54 @@ namespace teac
             }
 
             // Merge the strings from the resource files and Excel file
-            var targetStrings = Merge(sourceStrings, targetStringsFromXml, targetStringsFromExcel);
+            var targetStrings = Merge(sourceStrings, targetStringsFromXml, targetStringsFromExcel, out var mergeStatistics);
+
+            Console.WriteLine("Source directory: {0:d} strings = {1:d} translatable + {2:d} untranslatable + {3:d} empty",
+                sourceStrings.Strings.Count, sourceStrings.Strings.Count - mergeStatistics.UntranslatableSources - mergeStatistics.EmptySources,
+                mergeStatistics.UntranslatableSources, mergeStatistics.EmptySources);
+
+            Console.WriteLine("Target directory: {0:d} translations final, {1:d} not final, {2:d} missing, {3:d} extra\n",
+                mergeStatistics.FinalTargets, mergeStatistics.NonFinalTargets, mergeStatistics.MissingTargets, mergeStatistics.ExtraTargets);
+
+            Console.WriteLine("Recreating target directory ... ");
+            try
+            {
+                if (RecreateTargetDirectory(targetLanguageDirectory, targetStrings))
+                    Console.WriteLine("Done!\n");
+            }
+            catch
+            {
+                Console.WriteLine("ERROR: Could not recreate the resource files in the target directory");
+            }
+        }
+
+        private static void UpdateTarget(string sourceLanguage, string targetLanguage)
+        {
+            Console.WriteLine();
+
+            Console.WriteLine("Source language code: {0:s}", sourceLanguage);
+            Console.WriteLine("Target language code: {0:s}", targetLanguage);
+
+            if (!FindStringResourceDirectories(sourceLanguage, targetLanguage, out DirectoryInfo sourceLanguageDirectory, out DirectoryInfo targetLanguageDirectory))
+                return;
+
+            StringResources sourceStrings = ParseDirectory(sourceLanguage, true, sourceLanguageDirectory);
+            if (sourceStrings == null)
+                return; // Something went wrong
+
+            StringResources targetStringsFromXml = ParseDirectory(targetLanguage, false, targetLanguageDirectory);
+            if (targetStringsFromXml == null)
+                return; // Something went wrong
+
+            // Merge the strings from the resource files
+            var targetStrings = Merge(sourceStrings, targetStringsFromXml, null, out var mergeStatistics);
+
+            Console.WriteLine("Source directory: {0:d} strings = {1:d} translatable + {2:d} untranslatable + {3:d} empty",
+                sourceStrings.Strings.Count, sourceStrings.Strings.Count - mergeStatistics.UntranslatableSources - mergeStatistics.EmptySources,
+                mergeStatistics.UntranslatableSources, mergeStatistics.EmptySources);
+
+            Console.WriteLine("Target directory: {0:d} translations final, {1:d} not final, {2:d} missing, {3:d} extra\n",
+                mergeStatistics.FinalTargets, mergeStatistics.NonFinalTargets, mergeStatistics.MissingTargets, mergeStatistics.ExtraTargets);
 
             Console.WriteLine("Recreating target directory ... ");
             try
@@ -261,13 +321,36 @@ namespace teac
             return true;
         }
 
-        private static StringResources Merge(StringResources sourceStrings, StringResources targetStringsFromXml, StringResources targetStringsFromExcel)
+        private static StringResources Merge(
+            StringResources sourceStrings, StringResources targetStringsFromXml, StringResources targetStringsFromExcel, out MergeStatistics mergeStatistics)
         {
+            mergeStatistics = new MergeStatistics();
             var targetStrings = new StringResources(targetStringsFromXml.Language, isSourceLanguage: false);
             foreach(var sourceString in sourceStrings.Strings.Values)
             {
+                if (!sourceString.IsTranslatable)
+                {
+                    ++mergeStatistics.UntranslatableSources;
+                    continue; // A translation is not required
+                }
+                else if (!sourceString.HasNonEmptyContent)
+                {
+                    ++mergeStatistics.EmptySources;
+                    continue; // A translation is not required
+                }
+
                 var targetStringFromXml = GetTargetString(sourceString, targetStringsFromXml);
-                var targetStringFromExcel = GetTargetString(sourceString, targetStringsFromExcel);
+                var targetStringFromExcel = (targetStringsFromExcel != null) ? GetTargetString(sourceString, targetStringsFromExcel) : null;
+
+                if (targetStringFromXml != null)
+                {
+                    if (sourceString.Equals(targetStringFromXml.Source))
+                        ++mergeStatistics.FinalTargets;
+                    else
+                        ++mergeStatistics.NonFinalTargets; // The translation in the XML files is out of date
+                }
+                else
+                    ++mergeStatistics.MissingTargets; // A translation is not found in the XML files
 
                 StringResource targetString;
                 if (targetStringFromExcel == null)
@@ -299,20 +382,23 @@ namespace teac
                     targetStrings.Strings.Add(targetString.Name, targetString);
             }
 
+            foreach(var targetStringFromXml in targetStringsFromXml.Strings.Values)
+            {
+                if (!sourceStrings.Strings.TryGetValue(targetStringFromXml.Name, out var sourceString) || (sourceString.ResourceType != targetStringFromXml.ResourceType))
+                    ++mergeStatistics.ExtraTargets; // The target string doesn't have a source string of same resource type
+            }
+
             return targetStrings;
         }
 
         private static StringResource GetTargetString(StringResource sourceString, StringResources targetStrings)
         {
-            if (!sourceString.IsTranslatable || !sourceString.HasNonEmptyContent)
-                return null;    // A translation is not required
-
             if (targetStrings.Strings.TryGetValue(sourceString.Name, out var targetString) && (sourceString.ResourceType == targetString.ResourceType))
             {
                 targetString.FileName = sourceString.FileName;
                 targetString.HasFormatSpecifiers = sourceString.HasFormatSpecifiers;
                 targetString.IsTranslatable = true;
-                if ((targetString.Source != null) && !targetString.Source.Equals(sourceString))
+                if (!sourceString.Equals(targetString.Source))
                     targetString.Source = null; // The source string is no longer the same as the source of the translation
                 targetString.CommentLines = null;
                 return targetString;
@@ -436,6 +522,16 @@ namespace teac
             Console.WriteLine("Target langauage directory: {0:s}", targetLanguageDirectory.FullName);
             return true;
         }
+
+        private sealed class MergeStatistics
+        {
+            internal uint UntranslatableSources = 0;
+            internal uint EmptySources = 0;
+            internal uint FinalTargets = 0;
+            internal uint NonFinalTargets = 0;
+            internal uint MissingTargets = 0;
+            internal uint ExtraTargets = 0;
+        };
 
         private const string OutputFileNameTemplate = "{0:s}-to-{1:s}.xlsx";
         private const string LanguageCodeSubexpressionName = "lc";
