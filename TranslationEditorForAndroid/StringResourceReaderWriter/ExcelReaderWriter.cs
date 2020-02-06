@@ -9,7 +9,7 @@ namespace Com.MeraBills.StringResourceReaderWriter
 {
     public static class ExcelReaderWriter
     {
-        public static void Write(StringResources sourceStrings, StringResources targetStrings, FileInfo outputFile, bool exportAll)
+        public static void Write(StringResources sourceStrings, StringResources targetStrings, bool exportAll, FileInfo outputFile)
         {
             using var package = new ExcelPackage();
 

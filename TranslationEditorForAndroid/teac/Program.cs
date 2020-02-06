@@ -25,12 +25,6 @@ namespace teac
                 exportCommand.Description = "Export source language strings and their target language translations to an Excel file";
                 exportCommand.TreatUnmatchedTokensAsErrors = true;
 
-                var fileArgument = new Argument<FileInfo>("output-file")
-                {
-                    Description = "Path to output Excel file",
-                    Arity = ArgumentArity.ZeroOrOne
-                };
-
                 var exportAllArgument = new Argument<bool>("export-all")
                 {
                     Description = "Export all strings, final and non-final (default: False)",
@@ -38,11 +32,17 @@ namespace teac
                 };
                 exportAllArgument.SetDefaultValue(false);
 
+                var fileArgument = new Argument<FileInfo>("output-file")
+                {
+                    Description = "Path to output Excel file",
+                    Arity = ArgumentArity.ZeroOrOne
+                };
+
                 exportCommand.AddArgument(CreateLanguageCodeArgument("source-language"));
                 exportCommand.AddArgument(CreateLanguageCodeArgument("target-language"));
-                exportCommand.AddArgument(fileArgument);
                 exportCommand.AddArgument(exportAllArgument);
-                exportCommand.Handler = CommandHandler.Create<string, string, FileInfo, bool>(ExcelExport);
+                exportCommand.AddArgument(fileArgument);
+                exportCommand.Handler = CommandHandler.Create<string, string, bool, FileInfo>(ExcelExport);
 
                 rootCommand.AddCommand(exportCommand);
             }
@@ -83,7 +83,7 @@ namespace teac
             rootCommand.Invoke(args);
         }
 
-        private static void ExcelExport(string sourceLanguage, string targetLanguage, FileInfo outputFile, bool exportAll)
+        private static void ExcelExport(string sourceLanguage, string targetLanguage, bool exportAll, FileInfo outputFile)
         {
             Console.WriteLine();
 
@@ -114,7 +114,7 @@ namespace teac
             Console.WriteLine("Writing output file ... ");
             try
             {
-                ExcelReaderWriter.Write(sourceStrings, targetStrings, outputFile, exportAll);
+                ExcelReaderWriter.Write(sourceStrings, targetStrings, exportAll, outputFile);
                 Console.WriteLine("Done!\n");
             }
             catch
@@ -361,32 +361,8 @@ namespace teac
                 else
                     ++mergeStatistics.MissingTargets; // A translation is not found in the XML files
 
-                StringResource targetString;
-                if (targetStringFromExcel == null)
-                {
-                    // Target string does not exist in Excel. Use the one from the XML, if any
-                    targetString = targetStringFromXml ?? null;
-                }
-                else if (targetStringFromXml == null)
-                {
-                    // Target string exists in Excel, but not in XML
-                    targetString = targetStringFromExcel;
-                }
-                else
-                {
-                    // Target string exists in both Excel and XML
-                    if ((targetStringFromExcel.Source != null) == (targetStringFromXml.Source != null))
-                    {
-                        // Both strings are either final or not final - prefer the one from the Excel file
-                        targetString = targetStringFromExcel;
-                    }
-                    else
-                    {
-                        // Only one of the translations is marked as final - keep the one that is marked as final
-                        targetString = targetStringFromExcel.Source != null ? targetStringFromExcel : targetStringFromXml;
-                    }
-                }
-
+                // Use the use target string from Excel (if it exists), else use the target string from XML 
+                StringResource targetString = targetStringFromExcel ?? targetStringFromXml;
                 if (targetString != null)
                     targetStrings.Strings.Add(targetString.Name, targetString);
             }
