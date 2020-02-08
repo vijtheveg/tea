@@ -67,6 +67,18 @@ namespace Com.MeraBills.StringResourceReaderWriter
             }
         }
 
+        public override ResourceContent CreateTargetContent(ResourceContent oldSourceContent, ResourceContent oldTargetContent)
+        {
+            var oldTarget = (oldTargetContent as PluralsContent) ?? new PluralsContent();
+            var newTarget = new PluralsContent();
+            foreach(var oldSourceItemKey in this.Values.Keys)
+            {
+                oldTarget.Values.TryGetValue(oldSourceItemKey, out var oldTargetItemValue);
+                newTarget.Values.Add(oldSourceItemKey, oldTargetItemValue);
+            }
+            return newTarget;
+        }
+
         public override bool HasNonEmptyContent
         {
             get

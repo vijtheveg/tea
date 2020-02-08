@@ -2,8 +2,8 @@
   "profiles": {
     "teac": {
       "commandName": "Project",
-      "commandLineArgs": "excel-export en hi true",
-      "workingDirectory": "%userprofile%\\downloads\\Translations"
+      "commandLineArgs": "excel-export en kn true",
+      "workingDirectory": ".\\app\\src\\main\\res"
     }
   }
 }

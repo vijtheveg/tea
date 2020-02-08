@@ -380,12 +380,7 @@ namespace teac
         {
             if (targetStrings.Strings.TryGetValue(sourceString.Name, out var targetString) && (sourceString.ResourceType == targetString.ResourceType))
             {
-                targetString.FileName = sourceString.FileName;
-                targetString.HasFormatSpecifiers = sourceString.HasFormatSpecifiers;
-                targetString.IsTranslatable = true;
-                if (!sourceString.Equals(targetString.Source))
-                    targetString.Source = null; // The source string is no longer the same as the source of the translation
-                targetString.CommentLines = null;
+                sourceString.UpdateTarget(targetString);
                 return targetString;
             }
 

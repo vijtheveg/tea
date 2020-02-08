@@ -48,8 +48,8 @@ namespace Com.MeraBills.StringResourceReaderWriter
                 {
                     worksheet.Cells[row, 1].Value = sourceString.Name;
                     worksheet.Cells[row, 3].Value = ((StringContent)sourceString.Content).Value;
-                    if (targetString != null)
-                        worksheet.Cells[row, 4].Value = ((StringContent)targetString.Content).Value;
+                    if ((targetString != null) && (targetString.Content is StringContent targetContent) && (targetContent.Value != null))
+                        worksheet.Cells[row, 4].Value = targetContent.Value;
                     worksheet.Cells[row, 5].Value = isFinal ? FinalYes : FinalNo;
                     worksheet.Row(row).Style.Border.BorderAround(ExcelBorderStyle.Thin);
                     ++row;

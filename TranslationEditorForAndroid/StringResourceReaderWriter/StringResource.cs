@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text;
@@ -130,32 +131,6 @@ namespace Com.MeraBills.StringResourceReaderWriter
             }
         }
 
-        public void SetContent(ResourceContent newContent)
-        {
-            bool updateRequired = false;
-            if (this.Content == null)
-            {
-                if (newContent != null)
-                    updateRequired = true;
-                // else: nothing has changed
-            }
-            else
-            {
-                if (!this.Content.Equals(newContent))
-                    updateRequired = true;
-                // else: nothing has changed
-            }
-
-            if (updateRequired)
-            {
-                this.Content = newContent;
-
-                // Reset source whenever content changes
-                // The presence of source indicates that the content was finalized by a human
-                this.Source = null;
-            }
-        }
-
         public void TrySetSourceFromComment(string comment)
         {
             if (string.IsNullOrEmpty(comment))
@@ -171,6 +146,30 @@ namespace Com.MeraBills.StringResourceReaderWriter
             catch
             {
                 // Ignore any errors during deserialization from comment - just don't set the source in this case
+            }
+        }
+
+        public void UpdateTarget(StringResource targetString)
+        {
+            if (targetString == null)
+                return;
+
+            Debug.Assert(this.ResourceType == targetString.ResourceType);
+            Debug.Assert(string.CompareOrdinal(Name, targetString.Name) == 0);
+
+            targetString.FileName = this.FileName;
+            targetString.HasFormatSpecifiers = this.HasFormatSpecifiers;
+            targetString.IsTranslatable = true;
+            targetString.CommentLines = null;
+
+            if (!this.Equals(targetString.Source))
+            {
+                ResourceContent oldTargetContent = targetString.Content;
+                ResourceContent oldSourceContent = targetString.Source?.Content;
+                ResourceContent newTargetContent = this.Content.CreateTargetContent(oldSourceContent, oldTargetContent);
+                targetString.Content = newTargetContent;
+
+                targetString.Source = null;
             }
         }
 

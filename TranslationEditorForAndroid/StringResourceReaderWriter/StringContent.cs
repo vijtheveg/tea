@@ -25,6 +25,11 @@ namespace Com.MeraBills.StringResourceReaderWriter
             WriteStringValue(writer, this.Value);
         }
 
+        public override ResourceContent CreateTargetContent(ResourceContent oldSourceContent, ResourceContent oldTargetContent)
+        {
+            return oldTargetContent; // This is the best we can do
+        }
+
         public static string ReadStringValue(XmlReader reader)
         {
             if (reader.IsEmptyElement)

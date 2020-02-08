@@ -62,6 +62,38 @@ namespace Com.MeraBills.StringResourceReaderWriter
             }
         }
 
+        public override ResourceContent CreateTargetContent(ResourceContent oldSourceContent, ResourceContent oldTargetContent)
+        {
+            var oldTarget = (oldTargetContent as StringArrayContent) ?? new StringArrayContent();
+            if (oldSourceContent is StringArrayContent oldSource)
+            {
+                // Keep translations of unchanged items
+                var oldSourceToTarget = new Dictionary<string, string>(StringComparer.Ordinal);
+                for(int i = oldSource.Values.Count - 1; i >= 0; --i)
+                {
+                    string oldTargetString = i < oldTarget.Values.Count ? oldTarget.Values[i] : null;
+                    oldSourceToTarget.Add(oldSource.Values[i], oldTargetString);
+                }
+
+                oldTarget.Values.Clear();
+                foreach(var newSourceString in this.Values)
+                {
+                    oldSourceToTarget.TryGetValue(newSourceString, out var newTargetString);
+                    oldTarget.Values.Add(newTargetString);
+                }
+            }
+            else
+            {
+                // No way of checking which items have changed - just make the target array lenght the same as the source array
+                if (oldTarget.Values.Count > this.Values.Count)
+                    oldTarget.Values.RemoveRange(this.Values.Count, oldTarget.Values.Count - this.Values.Count);
+                else if (oldTarget.Values.Count < this.Values.Count)
+                    oldTarget.Values.AddRange(new string[this.Values.Count - oldTarget.Values.Count]);
+            }
+
+            return oldTarget;
+        }
+
         public override bool HasNonEmptyContent
         {
             get
