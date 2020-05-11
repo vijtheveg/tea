@@ -67,14 +67,26 @@ namespace Com.MeraBills.StringResourceReaderWriter
                 writer.WriteValue(value);
         }
 
-        public override bool HasNonEmptyContent
+        public override bool HasTranslatableContent
         {
-            get => IsValueNonEmpty(this.Value);
+            get => ValueNeedsTranslation(this.Value);
         }
 
-        public static bool IsValueNonEmpty(string value)
+        public static bool ValueNeedsTranslation(string value)
         {
-            return !string.IsNullOrEmpty(value) && !string.IsNullOrEmpty(value.Trim());
+            if (string.IsNullOrEmpty(value))
+                return false;
+
+            value = value.Trim();
+            if (string.IsNullOrEmpty(value))
+                return false;
+
+            // If the value starts with '@string/', the value just refers to another string
+            // It therefore doesn't need translation
+            if (value.StartsWith("@string/", StringComparison.Ordinal))
+                return false;
+
+            return true;
         }
 
         public override bool Equals(object obj)

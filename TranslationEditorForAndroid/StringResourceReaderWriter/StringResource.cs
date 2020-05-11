@@ -87,7 +87,7 @@ namespace Com.MeraBills.StringResourceReaderWriter
 
         public bool HasNonEmptyContent
         {
-            get => (this.Content != null) && this.Content.HasNonEmptyContent;
+            get => (this.Content != null) && this.Content.HasTranslatableContent;
         }
 
         public override string ToString()

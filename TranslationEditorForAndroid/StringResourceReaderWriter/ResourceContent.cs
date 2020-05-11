@@ -13,7 +13,7 @@ namespace Com.MeraBills.StringResourceReaderWriter
 
         public abstract ResourceContent CreateTargetContent(ResourceContent oldSourceContent, ResourceContent oldTargetContent);
 
-        public abstract bool HasNonEmptyContent { get; }
+        public abstract bool HasTranslatableContent { get; }
 
         public static bool Equals(ResourceContent lhs, ResourceContent rhs)
         {
