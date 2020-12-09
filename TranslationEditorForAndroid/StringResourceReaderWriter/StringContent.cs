@@ -40,25 +40,7 @@ namespace Com.MeraBills.StringResourceReaderWriter
                 return null;
             }
 
-            // Read past the start element
-            reader.Read();
-
-            string result = null;
-            if (reader.NodeType != XmlNodeType.EndElement)
-            {
-                if (reader.NodeType != XmlNodeType.Text)
-                    throw new ArgumentException("Text expected");
-
-                result = reader.Value;
-
-                // Read past the text node
-                reader.Read();
-            }
-
-            // Read past the end element
-            reader.ReadEndElement();
-
-            return result;
+            return reader.ReadInnerXml();
         }
 
         public static void WriteStringValue(XmlWriter writer, string value)

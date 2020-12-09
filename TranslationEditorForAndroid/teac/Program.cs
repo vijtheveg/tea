@@ -395,6 +395,7 @@ namespace teac
             {
                 Async = false,
                 CloseInput = true,
+                DtdProcessing = DtdProcessing.Parse,
                 IgnoreWhitespace = true
             };
             uint totalFiles = 0;
