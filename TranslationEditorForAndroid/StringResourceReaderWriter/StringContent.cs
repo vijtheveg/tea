@@ -46,7 +46,7 @@ namespace Com.MeraBills.StringResourceReaderWriter
         public static void WriteStringValue(XmlWriter writer, string value)
         {
             if (!string.IsNullOrEmpty(value))
-                writer.WriteValue(value);
+                writer.WriteRaw(value);
         }
 
         public override bool HasTranslatableContent
