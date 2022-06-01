@@ -14,7 +14,7 @@ namespace teac
     {
         static void Main(string[] args)
         {
-            var rootCommand = new RootCommand(description: "Translactions Editor for Android (Console)")
+            var rootCommand = new RootCommand(description: "Translations Editor for Android (Console)")
             {
                 TreatUnmatchedTokensAsErrors = true
             };
