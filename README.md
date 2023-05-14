@@ -1,7 +1,7 @@
 # Translation Editor for Android (tea)
 A full-lifecycle translations editor for localizing Android applications.
 
-Localizing an appliation is not an easy process:
+Localizing an application is not an easy process:
 1. The app developer creates the app in the default language, say English.
 2. The English string files need to be sent to a translator.
     - _**Problem**: The translator may not be comfortable enlisting in your source code repository or with editing XML files. If your strings are in multiple XML files, sharing these files is particularly messy._
