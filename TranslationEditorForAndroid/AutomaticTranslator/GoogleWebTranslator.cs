@@ -14,7 +14,7 @@ namespace Com.MeraBills.AutomaticTranslator
 
         public async Task<IDictionary<string, string>> Translate(string fromLanguage, string toLanguage, IDictionary<string, string> fromStrings)
         {
-
+            return null;
         }
     }
 }

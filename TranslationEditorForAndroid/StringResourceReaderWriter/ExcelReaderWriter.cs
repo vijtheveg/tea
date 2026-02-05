@@ -9,7 +9,7 @@ namespace Com.MeraBills.StringResourceReaderWriter
 {
     public static class ExcelReaderWriter
     {
-        public static void Write(StringResources sourceStrings, StringResources targetStrings, bool exportAll, FileInfo outputFile)
+        public static void Write(StringResources sourceStrings, StringResources targetStrings, Filter filter, FileInfo outputFile)
         {
             using var package = new ExcelPackage();
 
@@ -39,8 +39,11 @@ namespace Com.MeraBills.StringResourceReaderWriter
                 if (targetStrings.Strings.TryGetValue(sourceString.Name, out StringResource targetString))
                 {
                     isFinal = sourceString.Equals(targetString.Source);
-                    if (isFinal && !exportAll)
+                    if (isFinal && (filter != Filter.All))
                         continue; // We don't need to export final strings
+
+                    if ((filter == Filter.EmptyOnly) && (targetString != null) && targetString.HasNonEmptyContent)
+                        continue; // We don't need to export non-empty strings
                 }
 
                 // Translation is required - write the source and target content

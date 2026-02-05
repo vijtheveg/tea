@@ -25,12 +25,12 @@ namespace teac
                 exportCommand.Description = "Export source language strings and their target language translations to an Excel file";
                 exportCommand.TreatUnmatchedTokensAsErrors = true;
 
-                var exportAllArgument = new Argument<bool>("export-all")
+                var filterArgument = new Argument<Filter>("filter")
                 {
-                    Description = "Export all strings, final and non-final (default: False)",
+                    Description = $"Export filters: {Filter.All}, {Filter.ChangedOnly}, {Filter.EmptyOnly} (default: {Filter.ChangedOnly})",
                     Arity = ArgumentArity.ZeroOrOne
                 };
-                exportAllArgument.SetDefaultValue(false);
+                filterArgument.SetDefaultValue(Filter.ChangedOnly);
 
                 var fileArgument = new Argument<FileInfo>("output-file")
                 {
@@ -40,9 +40,9 @@ namespace teac
 
                 exportCommand.AddArgument(CreateLanguageCodeArgument("source-language"));
                 exportCommand.AddArgument(CreateLanguageCodeArgument("target-language"));
-                exportCommand.AddArgument(exportAllArgument);
+                exportCommand.AddArgument(filterArgument);
                 exportCommand.AddArgument(fileArgument);
-                exportCommand.Handler = CommandHandler.Create<string, string, bool, FileInfo>(ExcelExport);
+                exportCommand.Handler = CommandHandler.Create<string, string, Filter, FileInfo>(ExcelExport);
 
                 rootCommand.AddCommand(exportCommand);
             }
@@ -83,7 +83,7 @@ namespace teac
             rootCommand.Invoke(args);
         }
 
-        private static void ExcelExport(string sourceLanguage, string targetLanguage, bool exportAll, FileInfo outputFile)
+        private static void ExcelExport(string sourceLanguage, string targetLanguage, Filter filter, FileInfo outputFile)
         {
             Console.WriteLine();
 
@@ -91,7 +91,7 @@ namespace teac
             Console.WriteLine("Source language code: {0:s}", sourceLanguage);
             Console.WriteLine("Target language code: {0:s}", targetLanguage);
             Console.WriteLine("Output file: {0:s}", outputFile.FullName);
-            Console.WriteLine("Export all: {0:b}\n", exportAll);
+            Console.WriteLine("Filter: {0:s}\n", filter.ToString());
 
             if (!FindStringResourceDirectories(sourceLanguage, targetLanguage, out DirectoryInfo sourceLanguageDirectory, out DirectoryInfo targetLanguageDirectory))
                 return;
@@ -114,7 +114,7 @@ namespace teac
             Console.WriteLine("Writing output file ... ");
             try
             {
-                ExcelReaderWriter.Write(sourceStrings, targetStrings, exportAll, outputFile);
+                ExcelReaderWriter.Write(sourceStrings, targetStrings, filter, outputFile);
                 Console.WriteLine("Done!\n");
             }
             catch

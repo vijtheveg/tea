@@ -6,6 +6,6 @@ namespace Com.MeraBills.AutomaticTranslator
 {
     internal abstract class BaseTranslator
     {
-         Translate(string fromLanguage, string toLanguage, IDictionary<string, string> fromStrings)
+        internal abstract void Translate(string fromLanguage, string toLanguage, IDictionary<string, string> fromStrings);
     }
 }
